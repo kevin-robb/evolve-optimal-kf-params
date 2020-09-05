@@ -1,0 +1,102 @@
+---
+title: "KF-summaries"
+author: "Kevin Robb"
+date: '`r format(Sys.Date(),format="%A, %B %d, %Y")`'
+output: 
+  html_document:
+    df_print: paged
+    fig_caption: true
+    highlights: pygments
+    number_sections: no
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary of Kalman Filter
+
+## Introduction & Terms
+
+I wrote this while going through the tutorial at [kalmanfilter.net](kalmanfilter.net).
+
+A _Kalman Filter_ is a mathematical model which uses measurements and estimations (as well as the uncertainty in each) to produce accurate guesses of hidden variables which can include position, velocity, temperature, or whatever is being measured. The _KF_ can be used in a wide variety of applications, and this tutorial focuses on target tracking as the primary example. This involves simple position measurements of an airplane moving linearly either towards or away from the sensor. Some other examples discussed are determining the temperature of a fish tank or the weight of something on a scale using many repeated measurements. The original paper by Rudolf Kalman was published in 1960 and described a recursive solution to the discrete-data linear filtering problem.
+
+
+A _KF_ works by using a set of five equations, each serving a purpose as follows in this section. These equations together with continued input from sensors produce a fairly accurate estimate of the current state of the system as well as a prediction of the _System State_ at the next timestep. These future predictions are also used to take the next measurement (like making sure the radar hits the plane) and continue the _KF_ process. As such, there is a requirement to have a prediction algorithm, called a _Dynamic Model_. For tracking a moving object, this can simply involve Newton’s equations of motion. The _Dynamic Model_ (or _State Space Model_) takes the current state as input and gives the predicted next state as output. 
+
+Uncertainty in the sensor data is called _Measurement Noise_, and uncertainty in the _Dynamic Model_ (due to not accounting for wind, turbulence, etc) is called _Process Noise_. The _Kalman Filter_ is a prediction algorithm which takes into account both of these forms of noise in addition to the simple _Dynamic Model_. The _Kalman Filter_ assumes normal distribution of measurement errors. The normal distribution (or Gaussian) is described by the probability density function (PDF):
+	$$
+	  f(x;\mu,\sigma^2)=\frac{1}{\sqrt{2 \pi \sigma^2}}e^{\frac{-(x-\mu)^2}{2 \sigma^2}}
+	$$
+![_Basic math concepts related to measurement distribution and uncertainty._](images/kf-meas-distr.png)
+
+
+## Simple Example and the State Update Equation
+
+This example features measuring the weight of a gold bar several times with a scale, and using these measurements to estimate the actual weight of the gold bar (assuming there is no systematic bias in the scale). The _Dynamic Model_ here is very simple, since we expect the weight of the gold bar to stay constant. 
+
+![_Example set of measurements, with true value constant._](images/kf-weight-ex.png)
+
+We could find the true value by taking many measurements and averaging them, so we use this fact for our estimations. 
+
+$$
+  \hat{x}_{N,N} = \frac{1}{N}(z_1 + z_2 + ... + z_N) = \frac{1}{N} \sum^N_{n=1}(z_n) \textrm{ ,}
+$$
+where:
+
+ * $x$ is the true weight value (which we have no way of knowing exactly)
+ * $x_{n+1,n} = x_{n,n}$, because the dynamic model is constant.
+ * $z_n$ is the measurement at timestep $n$
+ * $\hat{x}_{n,n}$ is the estimate of $x$ made at timestep $n$ after taking the measurement $z_n$
+ * $\hat{x}_{n,n-1}$ is the previous estimate made at timestep $n-1$ after taking the measurement $z_{n-1}$
+ * $\hat{x}_{n+1,n}$ is the estimate of the next state made at timestep $n$ after taking the measurement $z_n$. This is a predicted state.
+
+Our estimate for $x$ will build on all previous estimates, slowly converging towards the true value. Rather than keeping track of all previous measurements, we will simply use the most recent estimate and the current measurement. We can derive the equation
+$$
+  \hat{x}_{N,N} = \hat{x}_{N,N-1} + \frac{1}{N}(z_N - \hat{x}_{N,N-1}) \textrm{ ,}
+$$
+which is called the _State Update Equation_. This is one of the five KF equations. The term $(z_N - \hat{x}_{N,N-1})$ is a measurement residual called the _innovation_ which contains the new information.
+
+The factor $\frac{1}{N}$ changes with each iteration, and is called the _Kalman Gain_. It is denoted $K_n$. We can rewrite the _State Update Equation_ as
+$$
+  \hat{x}_{N,N} = (K_N) z_N + (1 - K_N) \hat{x}_{N,N-1} \textrm{ .}
+$$
+The _Kalman Gain_ will not always be in this form, but here it means that after $n$ becomes large enough, the measurement term is negligible and we can stop.
+
+This process follows the procedure described in the following flow chart:
+
+![_Process followed as the Kalman Filter runs._](images/kf-process-chart.png)
+
+An initial estimate is required to kick off the KF process, but it need not be very precise. Following this procedure yields something like the following:
+
+![_Results of running the KF for ten timesteps._](images/kf-process-results.png)
+
+
+
+### Side Note
+The _State Update Equation_ is very similar to something I used in my research project in 2018. The agents in my population would evolve their _Learning Rate_, $L$, over the course of generations, and use this as the _Kalman Gain_ in this general form to update their expected values for the rewards of each of the three possible choices. Similarly, it took into account the most recent reward and the aggregate expected reward, just as above 
+
+
+
+
+## Template Rmd information
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
