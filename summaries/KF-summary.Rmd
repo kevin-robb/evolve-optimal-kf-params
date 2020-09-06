@@ -32,14 +32,14 @@ Uncertainty in the sensor data is called _Measurement Noise_, and uncertainty in
 	$$
 	  f(x;\mu,\sigma^2)=\frac{1}{\sqrt{2 \pi \sigma^2}}e^{\frac{-(x-\mu)^2}{2 \sigma^2}}
 	$$
-![_Basic math concepts related to measurement distribution and uncertainty._](images/kf-meas-distr.png)
+![_Basic math concepts related to measurement distribution and uncertainty._](images/kf-meas-distr.png){width=75%}
 
 
 ## Simple Example and the State Update Equation
 
 This example features measuring the weight of a gold bar several times with a scale, and using these measurements to estimate the actual weight of the gold bar (assuming there is no systematic bias in the scale). The _Dynamic Model_ here is very simple, since we expect the weight of the gold bar to stay constant. 
 
-![_Example set of measurements, with true value constant._](images/kf-weight-ex.png)
+![_Example set of measurements, with true value constant._](images/kf-weight-ex.png){width=75%}
 
 We could find the true value by taking many measurements and averaging them, so we use this fact for our estimations. 
 
@@ -69,18 +69,61 @@ The _Kalman Gain_ will not always be in this form, but here it means that after 
 
 This process follows the procedure described in the following flow chart:
 
-![_Process followed as the Kalman Filter runs._](images/kf-process-chart.png)
+![_Process followed as the Kalman Filter runs._](images/kf-process-chart.png){width=75%}
 
 An initial estimate is required to kick off the KF process, but it need not be very precise. Following this procedure yields something like the following:
 
-![_Results of running the KF for ten timesteps._](images/kf-process-results.png)
+![_Results of running the KF for ten timesteps._](images/kf-process-results.png){width=75%}
 
 
 
 ### Side Note
+
 The _State Update Equation_ is very similar to something I used in my research project in 2018. The agents in my population would evolve their _Learning Rate_, $L$, over the course of generations, and use this as the _Kalman Gain_ in this general form to update their expected values for the rewards of each of the three possible choices. Similarly, it took into account the most recent reward and the aggregate expected reward, just as above 
 
 
+## Non-Constant Example and the State Extrapolation Equation
+
+This example features an airplane moving horizontally at constant velocity away from a range detector. The _Dynamic Model_ for this situation is no longer constant, and requires two equations of motion:
+$$
+  x_{n+1} = x_n + \dot{x}_n \Delta t \\
+  \dot{x}_{n+1} = \dot{x}_n
+$$
+where $\Delta t$ is the interval between measurements, and $\dot{x}_n$ is the velocity at timestep $n$. This system of equations making up the _Dynamic Model_ is called a _State Extrapolation Equation_ (or _Transition Equation_ / _Prediction Equation_), and is the second of the five _Kalman Filter_ equations. This is because it extrapolates the current state to the next state as a prediction. Note that in this case there are two equations needed because we must predict the change in both the position and the velocity. Note that this example assumes our radar measures range and uses that to calculate velocity, rather than measuring velocity directly.
+
+### The $\alpha$ - $\beta$ Filter
+
+This is very similar to the previous example, but we have two equations and two variables to predict which form the _State Update Equation_ for this example. These are also called the _$\alpha$ - $\beta$ track  update equations._
+
+$$
+  \hat{\dot{x}}_{n,n} = \hat{\dot{x}}_{n,n-1} + \beta (\frac{z_n - \hat{x}_{n,n-1}}{\Delta t}) \\
+  \hat{x}_{n,n} = \hat{x}_{n,n-1} + \alpha (z_n - \hat{x}_{n,n-1})
+$$
+Here $\beta$ represents whether we think a difference between expectation and measurement was caused by radar imprecision or a change in the velocity of the aircraft. A much higher difference than we'd expect given the radar precision would elicit a high $\beta$, allowing our predicted velocity to change. If the difference is below our radar precision threshold, then we set a low $\beta$ since the velocity probably hasn't changed, and the difference can be attributed to radar measurement error.
+
+The value of $\alpha \in [0,1]$ is a set value that depends on our radar measurement precision (high $\alpha$ for high precision). Unlike the _Kalman Gain_ in the basic _State Update Equation_ in our first example, $\alpha$ does not change as the number of timesteps increases.
+
+![_Results of the $\alpha$ - $\beta$ filter. The estimates converge towards the true value_](images/kf-alpha-beta-result.png){width=75%}
+
+This also works for a plane with constant acceleration, and therefore changing velocity:
+
+```{r, echo=FALSE, out.width="49%", out.height="20%", fig.cap="Estimates for range and velocity over many timesteps.", fig.show='hold', fig.align='center'}
+knitr::include_graphics(c("images/kf-ab-accel-range.png","images/kf-ab-accel-vel.png"))
+```
+
+We can see that the position is estimated fairly well, but the velocity estimates tend to be off persistently. This gap is called a _lag error_. 
+
+### The $\alpha$ - $\beta$ - $\gamma$ Filter
+
+The addition of the $\gamma$ term essentially allows more equations to be used. We increase our _Dynamic Model_ to three kinematic equations, accounting now for acceleration in addition to position and velocity. The _State Update Equation_ then includes three equations, one for each coefficient. This process follows the previous very similarly, with the following graphical results:
+
+```{r, echo=FALSE, out.width="30%", out.height="15%", fig.cap="Estimates for range, velocity, and acceleration over many timesteps.", fig.show='hold', fig.align='center'}
+knitr::include_graphics(c("images/kf-abg-range.png","images/kf-abg-vel.png","images/kf-abg-accel.png"))
+```
+
+We can see this eliminates the lag error, but the estimate for acceleration is terrible. We can add a fourth equation to account for jerk, and continue to do this until all the variables we care about are accurately tracked and predicted.
+
+Some examples of $\alpha$ - $\beta$ - $\gamma$ filters include the _Kalman Filter_, _Extended Kalman Filter_, _Unscented Kalman Filter_, _Cubature Kalman Filter_, _Particle Filter_, and _Bayes Filter_.
 
 
 ## Template Rmd information
