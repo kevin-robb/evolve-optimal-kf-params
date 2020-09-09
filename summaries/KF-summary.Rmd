@@ -1,16 +1,18 @@
 ---
 title: "KF-summaries"
 author: "Kevin Robb"
-date: '`r format(Sys.Date(),format="%A, %B %d, %Y")`'
-output: 
+date: "9/8/2020"
+output:
   html_document:
     df_print: paged
-    fig_caption: true
+    fig_caption: yes
     highlights: pygments
     number_sections: no
     theme: cerulean
     toc: yes
     toc_float: yes
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -121,25 +123,90 @@ The addition of the $\gamma$ term essentially allows more equations to be used. 
 knitr::include_graphics(c("images/kf-abg-range.png","images/kf-abg-vel.png","images/kf-abg-accel.png"))
 ```
 
-We can see this eliminates the lag error, but the estimate for acceleration is terrible. We can add a fourth equation to account for jerk, and continue to do this until all the variables we care about are accurately tracked and predicted.
+We can see this eliminates the lag error in velocity, but the estimate for acceleration is terrible. If we care about predicting the acceleration, we can add a fourth equation to account for jerk, which will improve the acceleration plot. We can do this type of thing until all the variables we care about are accurately tracked and predicted, which usually will not go beyond position, velocity, and perhaps acceleration.
 
 Some examples of $\alpha$ - $\beta$ - $\gamma$ filters include the _Kalman Filter_, _Extended Kalman Filter_, _Unscented Kalman Filter_, _Cubature Kalman Filter_, _Particle Filter_, and _Bayes Filter_.
 
+## 1D Kalman Filter w/o Process Noise
 
-## Template Rmd information
+### Measurement and Estimate Uncertainties
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+We will begin to include uncertainties in our calculations.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The difference between a measurement and the true value (such as when weighing a gold bar in our first example) is called a _measurement error_. These errors are random, and can be described by a Gaussian with variance $\sigma^2$. This variance of the measurement errors is called the _measurement uncertainty_ and is also denoted by $r$. This value can be obtained from the measurement device's manufacturer or derived via calibration.
+$$
+  r = \sigma_{meas}^2
+$$
 
-```{r cars}
-summary(cars)
-```
+The difference between the estimate and the true value is called an _estimate error_. This error becomes smaller as we take more measurements, tending towards zero as the estimates converge on the true value. We don't know this value, but we can estimate the _uncertainty in estimate_, denoted by $p$. 
 
-You can also embed plots, for example:
+### The Kalman Gain Equation in 1D
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+The $\alpha$ - $\beta$ (- $\gamma$) parameters can be calculated dynamically for each filter iteration. These are called the _Kalman Gain_, denoted by $K_n$. The _Kalman Gain Equation_ is the third _Kalman Filter_ equation we have seen thus far:
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+$$
+  K_n = \frac{\textrm{Uncertainty in Estimate}}{\textrm{Uncertainty in Estimate + Uncertainty in Measurement}} \\
+  = \frac{p_{n,n-1}}{p_{n,n-1} + r_n}
+$$
+where:
+
+ - $p_{n,n-1}$ is the extrapolated estimate uncertainty
+ - $r_n$ is the measurement uncertainty
+ - $0 \leq K_n \leq 1$
+
+This brings us back to the generalized form of the _State Update Equation_ which we wrote previously:
+$$
+  \hat{x}_{n,n} = (K_n) z_n + (1 - K_n) \hat{x}_{n,n-1}
+$$
+This has some effects:
+
+ - When the measurement uncertainty is very large compared to the estimate uncertainty, $K_n$ is close to zero, giving very little weight to the measurements.
+ - When the measurement uncertainty is very small (the measurements are very precise), $K_n$ is close to one, giving a lot of weight to the measurements and very little weight to the estimates.
+ - When both uncertainties are about even, $K_n$ is close to 0.5.
+
+The _Kalman Gain_ tells us how much we want to change the aggregate estimate when given a new measurement.
+
+### The Covariance Update Equation in 1D
+
+We update the estimate uncertainty via the _Covariance Update Equation_:
+$$
+  p_{n,n} = (1 - K_n) p_{n,n-1}
+$$
+where:
+
+ - $K_n$ is the Kalman Gain
+ - $p_{n,n-1}$ is the estimate uncertainty that was calculated during the previous filter iteration
+ - $p_n,n$ is the estimate uncertainty of the current state
+ 
+Since $K_n \leq 1$, we can see that $p$ gets smaller with each filter iteration. When the measurement uncertainty is higher, it will take longer for $p$ to converge towards zero.
+
+This is the fourth _Kalman Filter_ equation.
+
+### The Covariance Extrapolation Equation in 1D
+
+Like state extrapolation, the estimate uncertainty extrapolation is done with the _Dynamic Model_ equations. The _Covariance Extrapolation Equation_ thus depends on the situation & its _Dynamic Model_. This is the fifth _Kalman Filter Equation_. 
+
+For our first example, measuring a gold bar of constant weight with a scale, the _Dynamic Model_ is constant, so the _Covariance Extrapolation Equation_ would be 
+$$
+  p_{n+1,n} = p_{n,n}
+$$
+where $p$ is the estimate uncertainty for the weight.
+
+For the second example of radar tracking an aircraft moving linearly at constant velocity, the _Dynamic Model_ is
+$$
+  \hat{x}_{n+1,n} = \hat{x}_{n,n} + \hat{\dot{x}}_{n,n} \Delta t \\
+  \hat{\dot{x}}_{n+1,n} = \hat{\dot{x}}_{n,n}
+$$
+so the _Covariance Extrapolation Equation_ is
+$$
+  p^x_{n+1,n} = p^x_{n,n} + \Delta t^2 * p^v_{n,n} \\
+  p^v_{n+1,n} = p^v_{n,n}
+$$
+where:
+
+ - $p^x$ is the position estimate uncertainty
+ - $p^v$ is the velocity estimate uncertainty
+
+### Putting it All Together
+
+TO-DO
