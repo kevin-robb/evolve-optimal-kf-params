@@ -209,4 +209,66 @@ where:
 
 ### Putting it All Together
 
-TO-DO
+This combines all five _Kalman Filter_ equations into one algorithm.
+
+![_The Kalman Filter process flow chart, which loops until the desired estimate precision is met._](images/kf-all-together-process.png){width=75%}
+
+There are a few things to note here:
+
+ - Initialization:
+    - Happens only once, at the start.
+    - Provides the Initial System State ($x_{1,0}$) and the Initial State Uncertainty ($p_{1,0}$).
+    - Can be provided by something or guessed, and don't have to be precise.
+ - Measurement:
+    - Happens every filter cycle.
+    - Provides the Measured System State ($z_n$) and the Measurement Uncertainty ($r_n$).
+    - The Uncertainty can be a standard of the measurement device or calculated every timestep.
+ - Outputs:
+    - Happens every filter cycle, after the update from new measurements and before predicting the next state.
+    - Provides the System State Estimate ($x_{n,n}$) and the Estimate Uncertainty ($p_{n,n}$).
+    - Recall that $p_{n,n}$ decreases with every filter cycle, so we need to decide the required precision (e.g., $\sigma = 3$ cm), and run the cycle until this Estimate Uncertainty is less than this value (e.g., $\sigma^2 \leq 9$ cm)
+
+![_A more detailed flow chart of the Kalman Filter cycle shown in the previous figure._](images/kf-all-together-process-detailed.png){width=75%}
+
+Note that the Predict step depends on the _Dynamic Model_ for our system.
+
+## Including Process Noise: The Complete KF Model
+
+The _Process Noise_ is the uncertainty of the _Dynamic Model_, which we will use to update the _Covariance Extrapolation Equation_. This noise can include random accelerations of an aircraft, resistance fluctuations in a resistor caused by temperature changes, etc. If we are measuring a building's height, the _Process Noise_ is zero, since the building doesn't move or change height. 
+
+The _Process Noise Variance_ is denoted by $q$. The _Covariance Extrapolation Equation_ for constant dynamics becomes
+$$
+  p_{n+1,n} = p_{n,n} + q_n \textrm{ .}
+$$
+
+For a fish tank with a constant steady state temperature, fluctuations in the true liquid temperature are possible, so we describe the system dynamics by
+$$
+  x_n = T + \omega_n \textrm{ ,}
+$$
+where:
+
+ - $T$ is the constant temperature.
+ - $\omega_n$ is a random process noise with variance $q$.
+
+As we go through the filter cycles, both the _Estimate Uncertainty_ and the _Kalman Gain_ exponentially decrease asymptotically as our estimates converge on the true value, even with the inclusion of the _Process Noise_:
+
+![_Temperature estimates converge on the true value despite process noise._](images/kf-process-noise-results.PNG){width=75%}
+
+
+If instead of being relatively constant, the temperature of the liquid in the tank is increasing at a constant rate, we see the following result when we use the same _Dynamic Model_:
+
+```{r, echo=FALSE, out.width="49%", out.height="20%", fig.cap="Temperature estimates fail with an incorrect dynamic model.", fig.show='hold', fig.align='center'}
+knitr::include_graphics(c("images/kf-temp-lag-10.png","images/kf-temp-lag-100.png"))
+```
+
+This graph shows another _lag error_, as we have seen before when the _Dynamic Model_ did not fit the case. Our model assumes constant temperature, which is not the actual situation, so it is able to increase and follow the trend, but it cannot keep up and create an accurate estimation. If we cannot create an accurate _Dynamic Model_, we can alternatively adjust the _Process Noise_, $q$, to achieve greater accuracy.
+
+Using a much higher value for $q$ in place of actually fixing the _Dynamic Model_ yields the following result:
+
+![_Constantly increasing temperature is estimated well using a high Process Noise_](images/kf-temp-high-process-noise.PNG){width=75%}
+
+The estimates follow the measurements, and there is no _lag error_. Because of our high _Process Noise_, the _Kalman Gain_ now stays relatively high ($\gt \textrm{ } \sim 0.9$) to give much more impact to each individual measurement rather than to the existing estimate.
+
+This misses the point of the _Kalman Filter_, as estimates are essentially disregarded and the most recent measurement becomes our guess for the value. We can see in the graph that when a measurement was off from the true value, the estimates still followed it almost exactly. The ideal situation is a _Dynamic Model_ which is fairly accurate to the real system, with a small _Process Noise_ to account for fluctuations. The _Process Noise_ can be increased situationally, such as if the system deviates from its expected _Dynamic Model_.
+
+
