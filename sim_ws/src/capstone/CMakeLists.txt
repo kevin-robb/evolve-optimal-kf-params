@@ -13,6 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+# TODO. Added this line to try and fix ekf.h not finding ros/ros.h
+include_directories(${catkin_INCLUDE_DIRS})
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
