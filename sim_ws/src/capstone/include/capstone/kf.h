@@ -1,5 +1,5 @@
-#ifndef IGVC_EKF_H
-#define IGVC_EKF_H
+#ifndef SIM_KF_H
+#define SIM_KF_H
 
 #include <ros/ros.h>
 #include <eigen3/Eigen/Dense>
