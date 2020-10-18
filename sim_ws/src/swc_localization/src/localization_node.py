@@ -138,8 +138,8 @@ def main():
     dist_pub = rospy.Publisher("/swc/dist", Float32, queue_size=1)
 
     # subscribe to robot's current GPS position and IMU data
-    gps_sub = rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
-    imu_sub = rospy.Subscriber("/sim/imu", Imu, update_heading, queue_size=1)
+    rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
+    rospy.Subscriber("/sim/imu", Imu, update_heading, queue_size=1)
 
     # Wait for Waypoints service and then request waypoints
     rospy.wait_for_service('/sim/waypoints')
