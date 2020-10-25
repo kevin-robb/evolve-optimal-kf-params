@@ -22,6 +22,7 @@ robot_axle_separation = 0.3 #meter
 ## Available Sensors
 # - GPS '/sim/gps'
 cur_gps = None
+got_first_gps = False
 start_gps = None
 lat_to_m = 110949.14
 lon_to_m = 90765.78
@@ -98,8 +99,8 @@ def predict():
     ## extrapolate the estimate uncertainty
     # assume constant for now TODO
 
-    #print("State:", State)
-    #print("Predictions:", Predictions)
+    print("State:", State)
+    print("Predictions:", Predictions)
 
 def measure():
     global meas_uncertainty, Measurements
@@ -166,12 +167,11 @@ def get_cur_hdg(hdg_msg):
     global cur_hdg
     cur_hdg = hdg_msg.data
 def get_cur_gps(gps_msg):
-    global cur_gps
+    global cur_gps, start_gps, got_first_gps
     cur_gps = gps_msg
-def get_start_gps(gps_msg):
-    global start_gps
-    start_gps = gps_msg
-    print("Received start_gps")
+    if not got_first_gps:
+        start_gps = gps_msg
+        got_first_gps = True
 def get_cur_vel(vel_msg):
     global cur_vel
     cur_vel = vel_msg.data
@@ -188,8 +188,6 @@ def main():
     rospy.Subscriber("/swc/current_heading", Float32, get_cur_hdg, queue_size=1)
     # subscribe to robot's current GPS position
     rospy.Subscriber("/sim/gps", Gps, get_cur_gps, queue_size=1)
-    # subscribe to the GPS coords for the start position
-    rospy.Subscriber("/swc/start_gps", Gps, get_start_gps, queue_size=1)
     # subscribe to the robot's current velocity
     rospy.Subscriber("/sim/velocity", Float32, get_cur_vel, queue_size=1)
     # subscrive to the IMU to get the angular_velocity

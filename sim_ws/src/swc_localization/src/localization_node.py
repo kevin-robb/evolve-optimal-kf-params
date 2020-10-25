@@ -12,7 +12,6 @@ from swc_msgs.srv import Waypoints
 loc_pub = None
 hdg_pub = None
 dist_pub = None
-start_pub = None
 # robot's current GPS location
 robot_gps = Gps()
 # waypoints
@@ -41,12 +40,6 @@ def interpret_waypoints(waypoints):
     visited = [False, False, False]
     wp_interpreted = True
     print("waypoints interpreted")
-
-    # publish the start waypoint for the KF to use
-    s_gps = Gps()
-    s_gps.longitude = start_gps.longitude
-    s_gps.latitude = start_gps.latitude
-    start_pub.publish(s_gps)
 
 def arrived_at_point(point_gps):
     if point_gps.latitude - robot_gps.latitude < error_margin_lat and point_gps.longitude - robot_gps.longitude < error_margin_lon:
@@ -133,7 +126,7 @@ def update_heading(imu_data):
     hdg_pub.publish(current_heading)
 
 def main():
-    global loc_pub, hdg_pub, dist_pub, start_pub
+    global loc_pub, hdg_pub, dist_pub
 
     # Initalize our node in ROS
     rospy.init_node('localization_node')
@@ -144,10 +137,6 @@ def main():
     hdg_pub = rospy.Publisher("/swc/current_heading", Float32, queue_size=1)
     # publish distance to current target waypoint
     dist_pub = rospy.Publisher("/swc/dist", Float32, queue_size=1)
-
-    ## Publishers for KF
-    # publish the GPS coords of the start position
-    start_pub = rospy.Publisher("/swc/start_gps", Gps, queue_size=1)
 
     # subscribe to robot's current GPS position and IMU data
     rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
