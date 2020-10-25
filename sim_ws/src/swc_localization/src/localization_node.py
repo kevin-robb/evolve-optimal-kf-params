@@ -31,8 +31,6 @@ def interpret_waypoints(waypoints):
     global start_gps, bonus_gps, goal_gps, visited, wp_interpreted
     # first waypoint is start location
     start_gps = waypoints.waypoints[0]
-    # publish the start waypoint for the KF to use
-    start_pub.publish(start_gps)
     # next three waypoints are bonuses
     bonus_gps.append(waypoints.waypoints[1])
     bonus_gps.append(waypoints.waypoints[2])
@@ -43,6 +41,12 @@ def interpret_waypoints(waypoints):
     visited = [False, False, False]
     wp_interpreted = True
     print("waypoints interpreted")
+
+    # publish the start waypoint for the KF to use
+    s_gps = Gps()
+    s_gps.longitude = start_gps.longitude
+    s_gps.latitude = start_gps.latitude
+    start_pub.publish(s_gps)
 
 def arrived_at_point(point_gps):
     if point_gps.latitude - robot_gps.latitude < error_margin_lat and point_gps.longitude - robot_gps.longitude < error_margin_lon:
@@ -142,7 +146,7 @@ def main():
     dist_pub = rospy.Publisher("/swc/dist", Float32, queue_size=1)
 
     ## Publishers for KF
-    # publish the GPS coords for the start position
+    # publish the GPS coords of the start position
     start_pub = rospy.Publisher("/swc/start_gps", Gps, queue_size=1)
 
     # subscribe to robot's current GPS position and IMU data
