@@ -63,13 +63,13 @@ kalman_gain = None #[None, None, None, None, None, None]
 def initialize():
     global initialized, est_uncertainty, meas_uncertainty, State
     ## set estimate uncertainty initial guess
-    est_uncertainty = [5,5,5,5,5,5]
+    est_uncertainty = [5.0,5.0,5.0,5.0,5.0,5.0]
 
     ## set system state initial guess
     State = [0,0,0,0,0,0]
 
     # set measurement uncertainties that don't change as it runs
-    meas_uncertainty = [5, 5, 3, 3, 1, 1]
+    meas_uncertainty = [5.0, 5.0, 3.0, 3.0, 1.0, 1.0]
 
     if cur_gps is not None and start_gps is not None and cur_hdg is not None and cur_vel is not None and yaw_rate is not None:
         ## set initialized flag
@@ -137,7 +137,8 @@ def update():
         kalman_gain = [0,0,0,0,0,0]
     for i in range(len(kalman_gain)):
         kalman_gain[i] = est_uncertainty[i] / (est_uncertainty[i] + meas_uncertainty[i])
-    
+        print(kalman_gain[i], est_uncertainty[i], meas_uncertainty[i])
+    #print("Kalman Gain: ", kalman_gain)
 
     ## estimate the current state using the state update equation
     # make sure everything has been set
@@ -151,6 +152,7 @@ def update():
     ## update the current estimate uncertainty
     for i in range(len(est_uncertainty)):
         est_uncertainty[i] *= (1-kalman_gain[i])
+    #print("Estimate Uncertainty: ", est_uncertainty)
 
 ## Run the KF
 def timer_callback(event):
