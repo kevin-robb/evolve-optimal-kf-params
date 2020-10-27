@@ -4,7 +4,7 @@ import rospy
 from std_msgs.msg import Float32
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
-from math import sin, cos
+from math import sin, cos, degrees
 import time
 
 # the period the KF runs at (1/frequency)
@@ -99,8 +99,7 @@ def predict():
     ## extrapolate the estimate uncertainty
     # assume constant for now TODO
 
-    print("State:", State)
-    print("Predictions:", Predictions)
+    print_state()
 
 def measure():
     global meas_uncertainty, Measurements
@@ -137,8 +136,6 @@ def update():
         kalman_gain = [0,0,0,0,0,0]
     for i in range(len(kalman_gain)):
         kalman_gain[i] = est_uncertainty[i] / (est_uncertainty[i] + meas_uncertainty[i])
-        print(kalman_gain[i], est_uncertainty[i], meas_uncertainty[i])
-    #print("Kalman Gain: ", kalman_gain)
 
     ## estimate the current state using the state update equation
     # make sure everything has been set
@@ -152,7 +149,6 @@ def update():
     ## update the current estimate uncertainty
     for i in range(len(est_uncertainty)):
         est_uncertainty[i] *= (1-kalman_gain[i])
-    #print("Estimate Uncertainty: ", est_uncertainty)
 
 ## Run the KF
 def timer_callback(event):
@@ -162,6 +158,13 @@ def timer_callback(event):
         predict()
         measure()
         update()
+
+## print State to the console in a readable format
+def print_state():
+    line = "State: x=" + "{:.2f}".format(State[0]) + ", y=" + "{:.2f}".format(State[1]) \
+        + ", x-vel=" + "{:.2f}".format(State[2]) + ", y-vel=" + "{:.2f}".format(State[3]) \
+        + ", hdg=" + "{:.2f}".format(degrees(State[4])) + ", yaw-rate=" + "{:.2f}".format(degrees(State[5]))
+    print(line)
 
 ## Functions to receive sensor readings. 
 ## Stay in buffer until measure() is run each clock cycle.
