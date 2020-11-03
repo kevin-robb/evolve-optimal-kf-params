@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
@@ -58,6 +58,9 @@ Predictions = None #[None, None, None, None, None, None]
 meas_uncertainty = None #[None, None, None, None, None, None]
 est_uncertainty = None #[None, None, None, None, None, None]
 kalman_gain = None #[None, None, None, None, None, None]
+
+## Publishers
+state_pub = None
 
 ## Kalman Filter functions
 def initialize():
@@ -149,6 +152,11 @@ def update():
     ## update the current estimate uncertainty
     for i in range(len(est_uncertainty)):
         est_uncertainty[i] *= (1-kalman_gain[i])
+    
+    ## publish the state for the robot to use
+    state_msg = Float32MultiArray()
+    state_msg.data = State
+    state_pub.publish(state_msg)
 
 ## Run the KF
 def timer_callback(event):
@@ -185,6 +193,7 @@ def get_yaw_rate(imu_msg):
     yaw_rate = imu_msg.angular_velocity.z
 
 def main():
+    global state_pub
     # initalize the node in ROS
     rospy.init_node('kf_node')
 
@@ -197,6 +206,9 @@ def main():
     rospy.Subscriber("/sim/velocity", Float32, get_cur_vel, queue_size=1)
     # subscrive to the IMU to get the angular_velocity
     rospy.Subscriber("/sim/imu", Imu, get_yaw_rate, queue_size=1)
+
+    # publish the KF state for the localization to use
+    state_pub = rospy.Publisher("/kf/state", Float32MultiArray, queue_size=1)
     
     # create timer with a period of 0.1 (10 Hz)
     rospy.Timer(rospy.Duration(timer_period), timer_callback)
