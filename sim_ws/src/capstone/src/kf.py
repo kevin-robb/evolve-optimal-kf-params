@@ -74,7 +74,7 @@ def initialize():
 
     # set measurement uncertainties and process noise that don't change as it runs
     meas_uncertainty = [5.0, 5.0, 3.0, 3.0, 1.0, 1.0]
-    process_noise = [1.0, 1.0, 3.0, 3.0, 1.0, 3.0]
+    process_noise = [10.0, 10.0, 15.0, 15.0, 10.0, 15.0]
 
     if cur_gps is not None and start_gps is not None and cur_hdg is not None and cur_vel is not None and yaw_rate is not None:
         ## set initialized flag
@@ -127,12 +127,12 @@ def measure():
     ## input measured values
     # store current x,y position from GPS
     if cur_gps is not None and start_gps is not None:
-        Measurements[0] = (cur_gps.longitude - start_gps.longitude) * lon_to_m
-        Measurements[1] = (cur_gps.latitude - start_gps.latitude) * lat_to_m
+        Measurements[1] = (cur_gps.longitude - start_gps.longitude) * lon_to_m
+        Measurements[0] = (cur_gps.latitude - start_gps.latitude) * lat_to_m
     # store x,y velocity. need to use heading to do so
     if cur_vel is not None and cur_hdg is not None:
-        Measurements[2] = cur_vel * cos(cur_hdg)
-        Measurements[3] = cur_vel * sin(cur_hdg)
+        Measurements[3] = cur_vel * cos(cur_hdg)
+        Measurements[2] = cur_vel * sin(cur_hdg)
     # store heading from IMU calculated in localization_node
     if cur_hdg is not None:
         Measurements[4] = cur_hdg
@@ -140,7 +140,8 @@ def measure():
     if yaw_rate is not None:
         Measurements[5] = yaw_rate
 
-    print("Measurements:", Measurements)
+    #print("Measurements:", Measurements)
+    print_innovation()
 
 def update():
     global kalman_gain, State, est_uncertainty
@@ -183,6 +184,12 @@ def print_state():
     line = "State: x=" + "{:.2f}".format(State[0]) + ", y=" + "{:.2f}".format(State[1]) \
         + ", x-vel=" + "{:.2f}".format(State[2]) + ", y-vel=" + "{:.2f}".format(State[3]) \
         + ", hdg=" + "{:.2f}".format(degrees(State[4])) + ", yaw-rate=" + "{:.2f}".format(degrees(State[5]))
+    print(line)
+## print innovation to the console in a readable format
+def print_innovation():
+    line = "Innovation: x=" + "{:.2f}".format(State[0]-Measurements[0]) + ", y=" + "{:.2f}".format(State[1]-Measurements[1]) \
+        + ", x-vel=" + "{:.2f}".format(State[2]-Measurements[2]) + ", y-vel=" + "{:.2f}".format(State[3]-Measurements[3]) \
+        + ", hdg=" + "{:.2f}".format(degrees(State[4]-Measurements[4])) + ", yaw-rate=" + "{:.2f}".format(degrees(State[5]-Measurements[5]))
     print(line)
 
 ## Functions to receive sensor readings. 
