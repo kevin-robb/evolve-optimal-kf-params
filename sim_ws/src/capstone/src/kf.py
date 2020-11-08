@@ -48,31 +48,33 @@ initialized = False
 #   State[3] = current y-velocity in m/s
 #   State[4] = current heading in radians (0=north, increasing CW)
 #   State[5] = current yaw rate (angular velocity about z-axis) of robot in rad/s
-State = None #[None, None, None, None, None, None]
+State = None
 # collection of measurement values/calculations of state variables
-Measurements = None #[None, None, None, None, None, None]
+Measurements = None
 # collection of predictions for state variables at next timestep
-Predictions = None #[None, None, None, None, None, None]
+Predictions = None
 
 ## Uncertainties. each is a column vector with the same number of elements
-meas_uncertainty = None #[None, None, None, None, None, None]
-est_uncertainty = None #[None, None, None, None, None, None]
-kalman_gain = None #[None, None, None, None, None, None]
+meas_uncertainty = None
+est_uncertainty = None
+kalman_gain = None
+process_noise = None
 
 ## Publishers
 state_pub = None
 
 ## Kalman Filter functions
 def initialize():
-    global initialized, est_uncertainty, meas_uncertainty, State
+    global initialized, est_uncertainty, meas_uncertainty, State, process_noise
     ## set estimate uncertainty initial guess
     est_uncertainty = [5.0,5.0,5.0,5.0,5.0,5.0]
 
     ## set system state initial guess
     State = [0,0,0,0,0,0]
 
-    # set measurement uncertainties that don't change as it runs
+    # set measurement uncertainties and process noise that don't change as it runs
     meas_uncertainty = [5.0, 5.0, 3.0, 3.0, 1.0, 1.0]
+    process_noise = [1.0, 1.0, 3.0, 3.0, 1.0, 3.0]
 
     if cur_gps is not None and start_gps is not None and cur_hdg is not None and cur_vel is not None and yaw_rate is not None:
         ## set initialized flag
@@ -81,7 +83,7 @@ def initialize():
 
 
 def predict():
-    global Predictions
+    global Predictions, est_uncertainty
     if Predictions is None:
         Predictions = [0,0,0,0,0,0]
     if State is None:
@@ -100,7 +102,16 @@ def predict():
     Predictions[5] = State[5]
 
     ## extrapolate the estimate uncertainty
-    # assume constant for now TODO
+    # assume constant for velocities and follow dynamic model for positions
+    for i in range(len(est_uncertainty)):
+        if i == 0 or i == 1 or i == 4:
+            # x, y, or yaw.
+            # update using dynamic model and velocity est uncertainties
+            est_uncertainty[i] += timer_period**2 * est_uncertainty[i+1]
+        else: #i == 2 or i == 3 or i == 5:
+            # x-vel, y-vel, or yaw rate. 
+            # constant velocity model, so do nothing
+            pass
 
     print_state()
 
@@ -129,7 +140,7 @@ def measure():
     if yaw_rate is not None:
         Measurements[5] = yaw_rate
 
-    #print("Measurements:", Measurements)
+    print("Measurements:", Measurements)
 
 def update():
     global kalman_gain, State, est_uncertainty
