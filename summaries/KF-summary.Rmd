@@ -271,4 +271,159 @@ The estimates follow the measurements, and there is no _lag error_. Because of o
 
 This misses the point of the _Kalman Filter_, as estimates are essentially disregarded and the most recent measurement becomes our guess for the value. We can see in the graph that when a measurement was off from the true value, the estimates still followed it almost exactly. The ideal situation is a _Dynamic Model_ which is fairly accurate to the real system, with a small _Process Noise_ to account for fluctuations. The _Process Noise_ can be increased situationally, such as if the system deviates from its expected _Dynamic Model_.
 
+# Multidimensional Kalman Filter
+
+## Constant Velocity Model
+
+Input variable $\hat{u}_n$ that describes the acceleration is equal to zero:
+$$
+  \hat{u}_n = 
+  \begin{bmatrix}
+  \hat{\ddot{x}}_n \\ \hat{\ddot{y}}_n \\ \hat{\ddot{z}}_n
+  \end{bmatrix}
+  = \begin{bmatrix}
+  0 \\ 0 \\ 0
+  \end{bmatrix}
+$$
+
+Thus we can eliminate the control variable part of the state extrapolation equation: $G \cdot u_{n,n} = 0$. The state extrapolation equation would then be:
+$$
+  \hat{x}_{n+1,n} = \boldsymbol{F} \cdot \hat{x}_{n,n}
+$$
+$$
+\begin{bmatrix}
+  \hat{x}_{n+1,n} \\ \hat{y}_{n+1,n} \\ \hat{z}_{n+1,n} \\
+  \hat{\dot{x}}_{n+1,n} \\ \hat{\dot{y}}_{n+1,n} \\ \hat{\dot{z}}_{n+1,n}
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 & 0 & \Delta t & 0 & 0 \\
+0 & 1 & 0 & 0 & \Delta t & 0 \\
+0 & 0 & 1 & 0 & 0 & \Delta t \\
+0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+  \hat{x}_{n,n} \\ \hat{y}_{n,n} \\ \hat{z}_{n,n} \\
+  \hat{\dot{x}}_{n,n} \\ \hat{\dot{y}}_{n,n} \\ \hat{\dot{z}}_{n,n}
+\end{bmatrix}
+$$
+so our system of equations is 
+$$
+\begin{cases}
+  \hat{x}_{n+1,1} = \hat{x}_{n,n} + \hat{\dot{x}}_{n,n} \cdot \Delta t \\ 
+  \hat{y}_{n+1,1} = \hat{y}_{n,n} + \hat{\dot{y}}_{n,n}  \cdot \Delta t \\ 
+  \hat{z}_{n+1,1} = \hat{z}_{n,n} + \hat{\dot{z}}_{n,n}  \cdot \Delta t \\
+  \hat{\dot{x}}_{n+1,1} = \hat{\dot{x}}_{n,n} \\
+  \hat{\dot{y}}_{n+1,1} = \hat{\dot{y}}_{n,n} \\
+  \hat{\dot{z}}_{n+1,1} = \hat{\dot{z}}_{n,n} 
+\end{cases}
+$$
+
+## Our application (2D)
+
+We use only two variables for position, latitude and longitude ($x$ and $y$), and are using a constant velocity model, so we have the differential equations,
+$$
+\begin{cases}
+\frac{dx}{dt} = v_x \\
+\frac{dy}{dt} = v_y \\
+\frac{dv_x}{dt} = 0 \\
+\frac{dv_y}{dt} = 0
+\end{cases}
+\textrm{ ,}
+$$
+which in matrix form, $\dot{\boldsymbol{x}}=\boldsymbol{A} \cdot \boldsymbol{x}$, is
+$$
+\begin{bmatrix}
+\dot{x} \\ \dot{y} \\ \dot{v_x} \\ \dot{v_y}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+x \\ y \\ v_x \\ v_y
+\end{bmatrix}
+$$
+We can see that $\boldsymbol{A}^2=0$, and thus all higher powers of $\boldsymbol{A}$ will drop out. Thus $\boldsymbol{F} = \boldsymbol{I} + \boldsymbol{A} \cdot \Delta t$. So our state transition matrix, $\boldsymbol{F}$, is
+$$
+  \boldsymbol{F} = 
+  \begin{bmatrix}
+  1 & 0 & \Delta t & 0 \\
+  0 & 1 & 0 & \Delta t \\
+  0 & 0 & 1 & 0 \\
+  0 & 0 & 0 & 1
+  \end{bmatrix}
+  \textrm{ ,}
+$$
+giving us the system of equations
+$$
+\begin{cases}
+  \hat{x}_{n+1,1} = \hat{x}_{n,n} + \hat{\dot{x}}_{n,n} \cdot \Delta t \\ 
+  \hat{y}_{n+1,1} = \hat{y}_{n,n} + \hat{\dot{y}}_{n,n}  \cdot \Delta t \\
+  \hat{\dot{x}}_{n+1,1} = \hat{\dot{x}}_{n,n} \\
+  \hat{\dot{y}}_{n+1,1} = \hat{\dot{y}}_{n,n}
+\end{cases}
+$$
+
+## Covariance Extrapolation Equation (matrix notation)
+
+The general form is
+$$
+  \boldsymbol{P_{n+1,n}} = \boldsymbol{F} \cdot \boldsymbol{P_{n,n}} \cdot \boldsymbol{F^T} + \boldsymbol{Q}
+$$
+where
+
+ - $\boldsymbol{P_{n,n}}$ is an estimate uncertainty (covariance) matrix of the current state
+ - $\boldsymbol{P_{n+1,n}}$ is a predicted estimate uncertainty (covariance) matrix for the next state
+ - $\boldsymbol{F}$ is a state transition matrix (derived in the previous section)
+ - $\boldsymbol{Q}$ is a process noise matrix
+ 
+Tuning Q is the goal of my research project. As the author of [kalmanfilter.net](kalmanfilter.net) explains, 
+> The process noise variance has a critical influence on the Kalman Filter performance. Too small q causes a lag error. If the q value is too large, the Kalman Filter will follow the measurements and produce noisy estimations. 
+
+### Deriving the Process Noise, $\boldsymbol{Q}$
+
+For the constant velocity model, the process noise covariance matrix looks like
+$$
+\boldsymbol{Q} = 
+\begin{bmatrix}
+V(x) & COV(x,v) \\ COV(v,x) & V(v)
+\end{bmatrix}
+=
+\sigma_a^2 \cdot
+\begin{bmatrix}
+\frac{\Delta t^4}{4} & \frac{\Delta t^3}{2} \\ \frac{\Delta t^3}{2} & \Delta t^2
+\end{bmatrix}
+$$
+for a discrete noise model. If we instead assume the noise changes continuously over time,
+$$
+\boldsymbol{Q}_C = \int_0^{\Delta t} \boldsymbol{Q} dt = 
+\int_0^{\Delta t} \sigma_a^2 \cdot
+\begin{bmatrix}
+\frac{\Delta t^4}{4} & \frac{\Delta t^3}{2} \\ \frac{\Delta t^3}{2} & \Delta t^2
+\end{bmatrix} dt
+=
+\sigma_a^2 \cdot
+\begin{bmatrix}
+\frac{\Delta t^5}{20} & \frac{\Delta t^4}{8} \\ \frac{\Delta t^4}{8} & \frac{\Delta t^3}{3}
+\end{bmatrix}
+$$
+
+The process noise variance, $\sigma_a^2$, must be chosen based on reasonable expectations or calculated based on stochastic statistics formulas. We will later be attempting to tune this value using a neural network.
+
+
+
+
+
+
+
+
+
 
