@@ -19,7 +19,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Summary of Kalman Filter
+# Summary of 1D Kalman Filter
 
 ## Introduction & Terms
 
@@ -551,6 +551,8 @@ The KF runs on a loop, alternating between Time Update ("Predict") and Measureme
 
 ![_The equations involved in each phase of the KF loop._](images/kf-summary-equations.png){width=75%}
 
+The multi-dimensional linear KF equations (and some supplemental ones) are reproduced in the following sections.
+
 ### State Extrapolation Equation
 
 $$
@@ -678,7 +680,6 @@ where
  - $\boldsymbol{e_n}$ is an estimation error.
  - $\boldsymbol{x_n}$ is a true system state (hidden state)
  - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at timestep `n`.
-
 
 
 
