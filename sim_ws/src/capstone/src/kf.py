@@ -6,6 +6,7 @@ from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
 import time
+import numpy as np
 
 # the period the KF runs at (1/frequency)
 timer_period = 0.1 #seconds
@@ -37,6 +38,19 @@ cur_vel = None
 
 
 ## Kalman Filter variables
+# State, S, is just x, y, xdot, ydot
+S = np.array([0],[0],[0],[0]) #column vector
+# State transition matrix, F
+F = np.array([1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1])
+F_trans = np.transpose(F)
+# used for state extrapolation eqn: S(n+1) = F*S(n)
+# and covariance extrapolation eqn: P(n+1) = F*P(n)*F^T
+# Estimate uncertainty (covariance) matrix, P
+P = np.array(#TODO)
+# Process noise, Q
+Q = np.array(#TODO)
+
+
 # init flag
 initialized = False
 
