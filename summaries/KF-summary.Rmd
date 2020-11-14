@@ -494,30 +494,62 @@ so the Kalman Gain here must have dimensions $5 x 3$.
 
 ## Covariance Update Equation
 
+$$
+\boldsymbol{P_{n,n}} = (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})
+\boldsymbol{P_{n,n-1}} (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})^T
++ \boldsymbol{K_n} \boldsymbol{R_n} \boldsymbol{K_n^T}
+$$
+where
 
+ - $\boldsymbol{P_{n,n}}$ is an estimate uncertainty (covariance) matrix of the current state
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
 
+This can also be simplified to
+$$
+\boldsymbol{P_{n,n}} = (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})
+\boldsymbol{P_{n,n-1}}
+$$
+using the Kalman Gain equation in the next section. However, this simpler version is far less stable, and even the smallest error in computing the Kalman Gain (due to round off) can lead to huge computation errors!
 
+## The Kalman Gain
 
+In matrix notation, we can represent the Kalman Gain as
+$$
+\boldsymbol{K_n} = \boldsymbol{P_{n,n-1}} \boldsymbol{H^T}
+(\boldsymbol{H} \boldsymbol{P_{n,n-1}} \boldsymbol{H^T} + \boldsymbol{R_n})^{-1}
+$$
+where
 
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
 
-
-
+The Kalman Filter is an _optimal filter_, so we will seek a Kalman Gain which minimizes the estimate variance; minimize the main diagonal of the covariance matrix $\boldsymbol{P_{n,n}}$. The sum of the main diagonal is called the _trace_. 
+We obtain the Kalman Gain equation above by rearranging the Covariance Update Equation, and then differentiating $tr(\boldsymbol{P_{n,n}})$ with respect to $\boldsymbol{K_n}$ and setting it equal to zero.
 
 ## Summary
 
 Kalman Filter computations are based on five equations.
 
-Two prediction equations:
+Two prediction equations predict the system state at the next time step and provide the uncertainty of the prediction.
 
  - _State Extrapolation Equation_ - prediction or estimation of the future state based on the known present estimation.
  - _Covariance Extrapolation Equation_ - the measure of uncertainty in our prediction.
 
-Two update equations:
+Two update equations corrects the prediction and the uncertainty of the current state.
 
  - _State Update Equation_ - estimation of the current state based on the known past estimation and present measurement.
  - _Covariance Update Equation_ - the measure of uncertainty in our estimation
  
- and the _Kalman Gain Equation_, required for computation of the update equations. The Kalman Gain is a "weighting" parameter for the measurement and the past estimations when estimating the current state.
+and the _Kalman Gain Equation_, required for computation of the update equations. The Kalman Gain is a "weighting" parameter for the measurement and the past estimations when estimating the current state.
+
+The KF runs on a loop, alternating between Time Update ("Predict") and Measurement Update ("Correct"). 
+
+![_The equations involved in each phase of the KF loop._](images/kf-summary-equations.png){width=75%}
 
 ### State Extrapolation Equation
 
@@ -564,6 +596,34 @@ where
  - $\boldsymbol{K_n}$ is the Kalman Gain (in matrix form).
  - $\boldsymbol{z_n}$ is a measurement.
  - $\boldsymbol{H}$ is an observation matrix
+ 
+### Covariance Update Equation
+
+$$
+\boldsymbol{P_{n,n}} = (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})
+\boldsymbol{P_{n,n-1}} (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})^T
++ \boldsymbol{K_n} \boldsymbol{R_n} \boldsymbol{K_n^T}
+$$
+where
+
+ - $\boldsymbol{P_{n,n}}$ is an estimate uncertainty (covariance) matrix of the current state
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
+ 
+### Kalman Gain Equation
+
+$$
+\boldsymbol{K_n} = \boldsymbol{P_{n,n-1}} \boldsymbol{H^T}
+(\boldsymbol{H} \boldsymbol{P_{n,n-1}} \boldsymbol{H^T} + \boldsymbol{R_n})^{-1}
+$$
+where
+
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
 
 ### Auxiliary Equations
 
