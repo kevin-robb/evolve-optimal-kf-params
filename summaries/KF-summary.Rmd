@@ -456,6 +456,43 @@ $$
 $$
 
 
+## State Update Equation
+
+$$
+  \boldsymbol{\hat{x}_{n,n}} = 
+  \boldsymbol{\hat{x}_{n,n-1}}
+  + \boldsymbol{K_n} \cdot (\boldsymbol{z_n} - \boldsymbol{H}
+  \cdot \boldsymbol{\hat{x}_{n,n-1}})
+$$
+where
+
+ - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at time step `n`.
+ - $\boldsymbol{\hat{x}_{n,n-1}}$ is a predicted system state vector from time step `n-1`.
+ - $\boldsymbol{K_n}$ is the Kalman Gain (in matrix form).
+ - $\boldsymbol{z_n}$ is a measurement.
+ - $\boldsymbol{H}$ is an observation matrix
+
+The term $(\boldsymbol{z_n} - \boldsymbol{H} \cdot \boldsymbol{\hat{x}_{n,n-1}})$ is the _innovation_. In our example above, it would yield:
+$$
+\begin{aligned}
+  (\boldsymbol{z_n} - \boldsymbol{H} \cdot \boldsymbol{\hat{x}_{n,n-1}}) &=
+  \begin{bmatrix}
+  z_1 \\ z_3 \\ z_5
+  \end{bmatrix} -
+  \begin{bmatrix}
+  1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 & 1
+  \end{bmatrix}
+  \begin{bmatrix}
+  \hat{x}_1 \\ \hat{x}_2 \\ \hat{x}_3 \\ \hat{x}_4 \\ \hat{x}_5
+  \end{bmatrix} \\
+  &= \begin{bmatrix}
+  (z_1 - \hat{x}_1) \\ (z_3 - \hat{x}_3) \\ (z_5 - \hat{x}_5)
+  \end{bmatrix}
+\end{aligned}
+$$
+so the Kalman Gain here must have dimensions $5 x 3$.
+
+## Covariance Update Equation
 
 
 
@@ -511,6 +548,22 @@ where
  - $\boldsymbol{P_{n+1,n}}$ is a predicted estimate uncertainty (covariance) matrix for the next state.
  - $\boldsymbol{F}$ is a state transition matrix (derived in the previous section).
  - $\boldsymbol{Q}$ is a process noise matrix.
+
+### State Update Equation
+
+$$
+  \boldsymbol{\hat{x}_{n,n}} = 
+  \boldsymbol{\hat{x}_{n,n-1}}
+  + \boldsymbol{K_n} \cdot (\boldsymbol{z_n} - \boldsymbol{H}
+  \cdot \boldsymbol{\hat{x}_{n,n-1}})
+$$
+where
+
+ - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at time step `n`.
+ - $\boldsymbol{\hat{x}_{n,n-1}}$ is a predicted system state vector from time step `n-1`.
+ - $\boldsymbol{K_n}$ is the Kalman Gain (in matrix form).
+ - $\boldsymbol{z_n}$ is a measurement.
+ - $\boldsymbol{H}$ is an observation matrix
 
 ### Auxiliary Equations
 
