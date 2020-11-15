@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "KF-summaries"
 author: "Kevin Robb"
@@ -686,3 +687,692 @@ where
 
 
 
+=======
+---
+title: "KF-summaries"
+author: "Kevin Robb"
+date: "9/8/2020"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: yes
+    highlights: pygments
+    number_sections: no
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary of 1D Kalman Filter
+
+## Introduction & Terms
+
+I wrote this while going through the tutorial at [kalmanfilter.net](kalmanfilter.net).
+
+A _Kalman Filter_ is a mathematical model which uses measurements and estimations (as well as the uncertainty in each) to produce accurate guesses of hidden variables which can include position, velocity, temperature, or whatever is being measured. The _KF_ can be used in a wide variety of applications, and this tutorial focuses on target tracking as the primary example. This involves simple position measurements of an airplane moving linearly either towards or away from the sensor. Some other examples discussed are determining the temperature of a fish tank or the weight of something on a scale using many repeated measurements. The original paper by Rudolf Kalman was published in 1960 and described a recursive solution to the discrete-data linear filtering problem.
+
+
+A _KF_ works by using a set of five equations, each serving a purpose as follows in this section. These equations together with continued input from sensors produce a fairly accurate estimate of the current state of the system as well as a prediction of the _System State_ at the next timestep. These future predictions are also used to take the next measurement (like making sure the radar hits the plane) and continue the _KF_ process. As such, there is a requirement to have a prediction algorithm, called a _Dynamic Model_. For tracking a moving object, this can simply involve Newton’s equations of motion. The _Dynamic Model_ (or _State Space Model_) takes the current state as input and gives the predicted next state as output. 
+
+Uncertainty in the sensor data is called _Measurement Noise_, and uncertainty in the _Dynamic Model_ (due to not accounting for wind, turbulence, etc) is called _Process Noise_. The _Kalman Filter_ is a prediction algorithm which takes into account both of these forms of noise in addition to the simple _Dynamic Model_. The _Kalman Filter_ assumes normal distribution of measurement errors. The normal distribution (or Gaussian) is described by the probability density function (PDF):
+	$$
+	  f(x;\mu,\sigma^2)=\frac{1}{\sqrt{2 \pi \sigma^2}}e^{\frac{-(x-\mu)^2}{2 \sigma^2}}
+	$$
+![_Basic math concepts related to measurement distribution and uncertainty._](images/kf-meas-distr.png){width=75%}
+
+
+## Simple Example and the State Update Equation
+
+This example features measuring the weight of a gold bar several times with a scale, and using these measurements to estimate the actual weight of the gold bar (assuming there is no systematic bias in the scale). The _Dynamic Model_ here is very simple, since we expect the weight of the gold bar to stay constant. 
+
+![_Example set of measurements, with true value constant._](images/kf-weight-ex.png){width=75%}
+
+We could find the true value by taking many measurements and averaging them, so we use this fact for our estimations. 
+
+$$
+  \hat{x}_{N,N} = \frac{1}{N}(z_1 + z_2 + ... + z_N) = \frac{1}{N} \sum^N_{n=1}(z_n) \textrm{ ,}
+$$
+where:
+
+ * $x$ is the true weight value (which we have no way of knowing exactly)
+ * $x_{n+1,n} = x_{n,n}$, because the dynamic model is constant.
+ * $z_n$ is the measurement at timestep $n$
+ * $\hat{x}_{n,n}$ is the estimate of $x$ made at timestep $n$ after taking the measurement $z_n$
+ * $\hat{x}_{n,n-1}$ is the previous estimate made at timestep $n-1$ after taking the measurement $z_{n-1}$
+ * $\hat{x}_{n+1,n}$ is the estimate of the next state made at timestep $n$ after taking the measurement $z_n$. This is a predicted state.
+
+Our estimate for $x$ will build on all previous estimates, slowly converging towards the true value. Rather than keeping track of all previous measurements, we will simply use the most recent estimate and the current measurement. We can derive the equation
+$$
+  \hat{x}_{N,N} = \hat{x}_{N,N-1} + \frac{1}{N}(z_N - \hat{x}_{N,N-1}) \textrm{ ,}
+$$
+which is called the _State Update Equation_. This is one of the five KF equations. The term $(z_N - \hat{x}_{N,N-1})$ is a measurement residual called the _innovation_ which contains the new information.
+
+The factor $\frac{1}{N}$ changes with each iteration, and is called the _Kalman Gain_. It is denoted $K_n$. We can rewrite the _State Update Equation_ as
+$$
+  \hat{x}_{N,N} = (K_N) z_N + (1 - K_N) \hat{x}_{N,N-1} \textrm{ .}
+$$
+The _Kalman Gain_ will not always be in this form, but here it means that after $n$ becomes large enough, the measurement term is negligible and we can stop.
+
+This process follows the procedure described in the following flow chart:
+
+![_Process followed as the Kalman Filter runs._](images/kf-process-chart.png){width=75%}
+
+An initial estimate is required to kick off the KF process, but it need not be very precise. Following this procedure yields something like the following:
+
+![_Results of running the KF for ten timesteps._](images/kf-process-results.png){width=75%}
+
+
+
+### Side Note
+
+The _State Update Equation_ is very similar to something I used in my research project in 2018. The agents in my population would evolve their _Learning Rate_, $L$, over the course of generations, and use this as the _Kalman Gain_ in this general form to update their expected values for the rewards of each of the three possible choices. Similarly, it took into account the most recent reward and the aggregate expected reward, just as above 
+
+
+## Non-Constant Example and the State Extrapolation Equation
+
+This example features an airplane moving horizontally at constant velocity away from a range detector. The _Dynamic Model_ for this situation is no longer constant, and requires two equations of motion:
+$$
+  x_{n+1} = x_n + \dot{x}_n \Delta t \\
+  \dot{x}_{n+1} = \dot{x}_n
+$$
+where $\Delta t$ is the interval between measurements, and $\dot{x}_n$ is the velocity at timestep $n$. This system of equations making up the _Dynamic Model_ is called a _State Extrapolation Equation_ (or _Transition Equation_ / _Prediction Equation_), and is the second of the five _Kalman Filter_ equations. This is because it extrapolates the current state to the next state as a prediction. Note that in this case there are two equations needed because we must predict the change in both the position and the velocity. Note that this example assumes our radar measures range and uses that to calculate velocity, rather than measuring velocity directly.
+
+### The $\alpha$ - $\beta$ Filter
+
+This is very similar to the previous example, but we have two equations and two variables to predict which form the _State Update Equation_ for this example. These are also called the _$\alpha$ - $\beta$ track  update equations._
+
+$$
+  \hat{\dot{x}}_{n,n} = \hat{\dot{x}}_{n,n-1} + \beta (\frac{z_n - \hat{x}_{n,n-1}}{\Delta t}) \\
+  \hat{x}_{n,n} = \hat{x}_{n,n-1} + \alpha (z_n - \hat{x}_{n,n-1})
+$$
+Here $\beta$ represents whether we think a difference between expectation and measurement was caused by radar imprecision or a change in the velocity of the aircraft. A much higher difference than we'd expect given the radar precision would elicit a high $\beta$, allowing our predicted velocity to change. If the difference is below our radar precision threshold, then we set a low $\beta$ since the velocity probably hasn't changed, and the difference can be attributed to radar measurement error.
+
+The value of $\alpha \in [0,1]$ is a set value that depends on our radar measurement precision (high $\alpha$ for high precision). Unlike the _Kalman Gain_ in the basic _State Update Equation_ in our first example, $\alpha$ does not change as the number of timesteps increases.
+
+![_Results of the $\alpha$ - $\beta$ filter. The estimates converge towards the true value_](images/kf-alpha-beta-result.png){width=75%}
+
+This also works for a plane with constant acceleration, and therefore changing velocity:
+
+```{r, echo=FALSE, out.width="49%", out.height="20%", fig.cap="Estimates for range and velocity over many timesteps.", fig.show='hold', fig.align='center'}
+knitr::include_graphics(c("images/kf-ab-accel-range.png","images/kf-ab-accel-vel.png"))
+```
+
+We can see that the position is estimated fairly well, but the velocity estimates tend to be off persistently. This gap is called a _lag error_. 
+
+### The $\alpha$ - $\beta$ - $\gamma$ Filter
+
+The addition of the $\gamma$ term essentially allows more equations to be used. We increase our _Dynamic Model_ to three kinematic equations, accounting now for acceleration in addition to position and velocity. The _State Update Equation_ then includes three equations, one for each coefficient. This process follows the previous very similarly, with the following graphical results:
+
+```{r, echo=FALSE, out.width="30%", out.height="15%", fig.cap="Estimates for range, velocity, and acceleration over many timesteps.", fig.show='hold', fig.align='center'}
+knitr::include_graphics(c("images/kf-abg-range.png","images/kf-abg-vel.png","images/kf-abg-accel.png"))
+```
+
+We can see this eliminates the lag error in velocity, but the estimate for acceleration is terrible. If we care about predicting the acceleration, we can add a fourth equation to account for jerk, which will improve the acceleration plot. We can do this type of thing until all the variables we care about are accurately tracked and predicted, which usually will not go beyond position, velocity, and perhaps acceleration.
+
+Some examples of $\alpha$ - $\beta$ - $\gamma$ filters include the _Kalman Filter_, _Extended Kalman Filter_, _Unscented Kalman Filter_, _Cubature Kalman Filter_, _Particle Filter_, and _Bayes Filter_.
+
+## 1D Kalman Filter w/o Process Noise
+
+### Measurement and Estimate Uncertainties
+
+We will begin to include uncertainties in our calculations.
+
+The difference between a measurement and the true value (such as when weighing a gold bar in our first example) is called a _measurement error_. These errors are random, and can be described by a Gaussian with variance $\sigma^2$. This variance of the measurement errors is called the _measurement uncertainty_ and is also denoted by $r$. This value can be obtained from the measurement device's manufacturer or derived via calibration.
+$$
+  r = \sigma_{meas}^2
+$$
+
+The difference between the estimate and the true value is called an _estimate error_. This error becomes smaller as we take more measurements, tending towards zero as the estimates converge on the true value. We don't know this value, but we can estimate the _uncertainty in estimate_, denoted by $p$. 
+
+### The Kalman Gain Equation in 1D
+
+The $\alpha$ - $\beta$ (- $\gamma$) parameters can be calculated dynamically for each filter iteration. These are called the _Kalman Gain_, denoted by $K_n$. The _Kalman Gain Equation_ is the third _Kalman Filter_ equation we have seen thus far:
+
+$$
+  K_n = \frac{\textrm{Uncertainty in Estimate}}{\textrm{Uncertainty in Estimate + Uncertainty in Measurement}} \\
+  = \frac{p_{n,n-1}}{p_{n,n-1} + r_n}
+$$
+where:
+
+ - $p_{n,n-1}$ is the extrapolated estimate uncertainty
+ - $r_n$ is the measurement uncertainty
+ - $0 \leq K_n \leq 1$
+
+This brings us back to the generalized form of the _State Update Equation_ which we wrote previously:
+$$
+  \hat{x}_{n,n} = (K_n) z_n + (1 - K_n) \hat{x}_{n,n-1}
+$$
+This has some effects:
+
+ - When the measurement uncertainty is very large compared to the estimate uncertainty, $K_n$ is close to zero, giving very little weight to the measurements.
+ - When the measurement uncertainty is very small (the measurements are very precise), $K_n$ is close to one, giving a lot of weight to the measurements and very little weight to the estimates.
+ - When both uncertainties are about even, $K_n$ is close to 0.5.
+
+The _Kalman Gain_ tells us how much we want to change the aggregate estimate when given a new measurement.
+
+### The Covariance Update Equation in 1D
+
+We update the estimate uncertainty via the _Covariance Update Equation_:
+$$
+  p_{n,n} = (1 - K_n) p_{n,n-1}
+$$
+where:
+
+ - $K_n$ is the Kalman Gain
+ - $p_{n,n-1}$ is the estimate uncertainty that was calculated during the previous filter iteration
+ - $p_n,n$ is the estimate uncertainty of the current state
+ 
+Since $K_n \leq 1$, we can see that $p$ gets smaller with each filter iteration. When the measurement uncertainty is higher, it will take longer for $p$ to converge towards zero.
+
+This is the fourth _Kalman Filter_ equation.
+
+### The Covariance Extrapolation Equation in 1D
+
+Like state extrapolation, the estimate uncertainty extrapolation is done with the _Dynamic Model_ equations. The _Covariance Extrapolation Equation_ thus depends on the situation & its _Dynamic Model_. This is the fifth _Kalman Filter Equation_. 
+
+For our first example, measuring a gold bar of constant weight with a scale, the _Dynamic Model_ is constant, so the _Covariance Extrapolation Equation_ would be 
+$$
+  p_{n+1,n} = p_{n,n}
+$$
+where $p$ is the estimate uncertainty for the weight.
+
+For the second example of radar tracking an aircraft moving linearly at constant velocity, the _Dynamic Model_ is
+$$
+  \hat{x}_{n+1,n} = \hat{x}_{n,n} + \hat{\dot{x}}_{n,n} \Delta t \\
+  \hat{\dot{x}}_{n+1,n} = \hat{\dot{x}}_{n,n}
+$$
+so the _Covariance Extrapolation Equation_ is
+$$
+  p^x_{n+1,n} = p^x_{n,n} + \Delta t^2 * p^v_{n,n} \\
+  p^v_{n+1,n} = p^v_{n,n}
+$$
+where:
+
+ - $p^x$ is the position estimate uncertainty
+ - $p^v$ is the velocity estimate uncertainty
+
+### Putting it All Together
+
+This combines all five _Kalman Filter_ equations into one algorithm.
+
+![_The Kalman Filter process flow chart, which loops until the desired estimate precision is met._](images/kf-all-together-process.png){width=75%}
+
+There are a few things to note here:
+
+ - Initialization:
+    - Happens only once, at the start.
+    - Provides the Initial System State ($x_{1,0}$) and the Initial State Uncertainty ($p_{1,0}$).
+    - Can be provided by something or guessed, and don't have to be precise.
+ - Measurement:
+    - Happens every filter cycle.
+    - Provides the Measured System State ($z_n$) and the Measurement Uncertainty ($r_n$).
+    - The Uncertainty can be a standard of the measurement device or calculated every timestep.
+ - Outputs:
+    - Happens every filter cycle, after the update from new measurements and before predicting the next state.
+    - Provides the System State Estimate ($x_{n,n}$) and the Estimate Uncertainty ($p_{n,n}$).
+    - Recall that $p_{n,n}$ decreases with every filter cycle, so we need to decide the required precision (e.g., $\sigma = 3$ cm), and run the cycle until this Estimate Uncertainty is less than this value (e.g., $\sigma^2 \leq 9$ cm)
+
+![_A more detailed flow chart of the Kalman Filter cycle shown in the previous figure._](images/kf-all-together-process-detailed.png){width=75%}
+
+Note that the Predict step depends on the _Dynamic Model_ for our system.
+
+## Including Process Noise: The Complete KF Model
+
+The _Process Noise_ is the uncertainty of the _Dynamic Model_, which we will use to update the _Covariance Extrapolation Equation_. This noise can include random accelerations of an aircraft, resistance fluctuations in a resistor caused by temperature changes, etc. If we are measuring a building's height, the _Process Noise_ is zero, since the building doesn't move or change height. 
+
+The _Process Noise Variance_ is denoted by $q$. The _Covariance Extrapolation Equation_ for constant dynamics becomes
+$$
+  p_{n+1,n} = p_{n,n} + q_n \textrm{ .}
+$$
+
+For a fish tank with a constant steady state temperature, fluctuations in the true liquid temperature are possible, so we describe the system dynamics by
+$$
+  x_n = T + \omega_n \textrm{ ,}
+$$
+where:
+
+ - $T$ is the constant temperature.
+ - $\omega_n$ is a random process noise with variance $q$.
+
+As we go through the filter cycles, both the _Estimate Uncertainty_ and the _Kalman Gain_ exponentially decrease asymptotically as our estimates converge on the true value, even with the inclusion of the _Process Noise_:
+
+![_Temperature estimates converge on the true value despite process noise._](images/kf-process-noise-results.PNG){width=75%}
+
+
+If instead of being relatively constant, the temperature of the liquid in the tank is increasing at a constant rate, we see the following result when we use the same _Dynamic Model_:
+
+```{r, echo=FALSE, out.width="49%", out.height="20%", fig.cap="Temperature estimates fail with an incorrect dynamic model.", fig.show='hold', fig.align='center'}
+knitr::include_graphics(c("images/kf-temp-lag-10.png","images/kf-temp-lag-100.png"))
+```
+
+This graph shows another _lag error_, as we have seen before when the _Dynamic Model_ did not fit the case. Our model assumes constant temperature, which is not the actual situation, so it is able to increase and follow the trend, but it cannot keep up and create an accurate estimation. If we cannot create an accurate _Dynamic Model_, we can alternatively adjust the _Process Noise_, $q$, to achieve greater accuracy.
+
+Using a much higher value for $q$ in place of actually fixing the _Dynamic Model_ yields the following result:
+
+![_Constantly increasing temperature is estimated well using a high Process Noise_](images/kf-temp-high-process-noise.PNG){width=75%}
+
+The estimates follow the measurements, and there is no _lag error_. Because of our high _Process Noise_, the _Kalman Gain_ now stays relatively high ($\gt \textrm{ } \sim 0.9$) to give much more impact to each individual measurement rather than to the existing estimate.
+
+This misses the point of the _Kalman Filter_, as estimates are essentially disregarded and the most recent measurement becomes our guess for the value. We can see in the graph that when a measurement was off from the true value, the estimates still followed it almost exactly. The ideal situation is a _Dynamic Model_ which is fairly accurate to the real system, with a small _Process Noise_ to account for fluctuations. The _Process Noise_ can be increased situationally, such as if the system deviates from its expected _Dynamic Model_.
+
+# Multidimensional Kalman Filter
+
+## Constant Velocity Model
+
+Input variable $\hat{u}_n$ that describes the acceleration is equal to zero:
+$$
+  \hat{u}_n = 
+  \begin{bmatrix}
+  \hat{\ddot{x}}_n \\ \hat{\ddot{y}}_n \\ \hat{\ddot{z}}_n
+  \end{bmatrix}
+  = \begin{bmatrix}
+  0 \\ 0 \\ 0
+  \end{bmatrix}
+$$
+
+Thus we can eliminate the control variable part of the state extrapolation equation: $G \cdot u_{n,n} = 0$. The state extrapolation equation would then be:
+$$
+  \hat{x}_{n+1,n} = \boldsymbol{F} \cdot \hat{x}_{n,n}
+$$
+$$
+\begin{bmatrix}
+  \hat{x}_{n+1,n} \\ \hat{y}_{n+1,n} \\ \hat{z}_{n+1,n} \\
+  \hat{\dot{x}}_{n+1,n} \\ \hat{\dot{y}}_{n+1,n} \\ \hat{\dot{z}}_{n+1,n}
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 & 0 & \Delta t & 0 & 0 \\
+0 & 1 & 0 & 0 & \Delta t & 0 \\
+0 & 0 & 1 & 0 & 0 & \Delta t \\
+0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+  \hat{x}_{n,n} \\ \hat{y}_{n,n} \\ \hat{z}_{n,n} \\
+  \hat{\dot{x}}_{n,n} \\ \hat{\dot{y}}_{n,n} \\ \hat{\dot{z}}_{n,n}
+\end{bmatrix}
+$$
+so our system of equations is 
+$$
+\begin{cases}
+  \hat{x}_{n+1,1} = \hat{x}_{n,n} + \hat{\dot{x}}_{n,n} \cdot \Delta t \\ 
+  \hat{y}_{n+1,1} = \hat{y}_{n,n} + \hat{\dot{y}}_{n,n}  \cdot \Delta t \\ 
+  \hat{z}_{n+1,1} = \hat{z}_{n,n} + \hat{\dot{z}}_{n,n}  \cdot \Delta t \\
+  \hat{\dot{x}}_{n+1,1} = \hat{\dot{x}}_{n,n} \\
+  \hat{\dot{y}}_{n+1,1} = \hat{\dot{y}}_{n,n} \\
+  \hat{\dot{z}}_{n+1,1} = \hat{\dot{z}}_{n,n} 
+\end{cases}
+$$
+
+## Our application (2D)
+
+We use only two variables for position, latitude and longitude ($x$ and $y$), and are using a constant velocity model, so we have the differential equations,
+$$
+\begin{cases}
+\frac{dx}{dt} = v_x \\
+\frac{dy}{dt} = v_y \\
+\frac{dv_x}{dt} = 0 \\
+\frac{dv_y}{dt} = 0
+\end{cases}
+\textrm{ ,}
+$$
+which in matrix form, $\dot{\boldsymbol{x}}=\boldsymbol{A} \cdot \boldsymbol{x}$, is
+$$
+\begin{bmatrix}
+\dot{x} \\ \dot{y} \\ \dot{v_x} \\ \dot{v_y}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+x \\ y \\ v_x \\ v_y
+\end{bmatrix}
+$$
+We can see that $\boldsymbol{A}^2=0$, and thus all higher powers of $\boldsymbol{A}$ will drop out. Thus $\boldsymbol{F} = \boldsymbol{I} + \boldsymbol{A} \cdot \Delta t$. So our state transition matrix, $\boldsymbol{F}$, is
+$$
+  \boldsymbol{F} = 
+  \begin{bmatrix}
+  1 & 0 & \Delta t & 0 \\
+  0 & 1 & 0 & \Delta t \\
+  0 & 0 & 1 & 0 \\
+  0 & 0 & 0 & 1
+  \end{bmatrix}
+  \textrm{ ,}
+$$
+giving us the system of equations
+$$
+\begin{cases}
+  \hat{x}_{n+1,1} = \hat{x}_{n,n} + \hat{\dot{x}}_{n,n} \cdot \Delta t \\ 
+  \hat{y}_{n+1,1} = \hat{y}_{n,n} + \hat{\dot{y}}_{n,n}  \cdot \Delta t \\
+  \hat{\dot{x}}_{n+1,1} = \hat{\dot{x}}_{n,n} \\
+  \hat{\dot{y}}_{n+1,1} = \hat{\dot{y}}_{n,n}
+\end{cases}
+$$
+
+## Covariance Extrapolation Equation (matrix notation)
+
+The general form is
+$$
+  \boldsymbol{P_{n+1,n}} = \boldsymbol{F} \cdot \boldsymbol{P_{n,n}} \cdot \boldsymbol{F^T} + \boldsymbol{Q}
+$$
+where
+
+ - $\boldsymbol{P_{n,n}}$ is an estimate uncertainty (covariance) matrix of the current state
+ - $\boldsymbol{P_{n+1,n}}$ is a predicted estimate uncertainty (covariance) matrix for the next state
+ - $\boldsymbol{F}$ is a state transition matrix (derived in the previous section)
+ - $\boldsymbol{Q}$ is a process noise matrix
+ 
+Tuning Q is the goal of my research project. As the author of [kalmanfilter.net](kalmanfilter.net) explains, 
+
+> The process noise variance has a critical influence on the Kalman Filter performance. Too small q causes a lag error. If the q value is too large, the Kalman Filter will follow the measurements and produce noisy estimations. 
+
+### Deriving the Process Noise, $\boldsymbol{Q}$
+
+For the constant velocity model, the process noise covariance matrix looks like
+$$
+\boldsymbol{Q} = 
+\begin{bmatrix}
+V(x) & COV(x,v) \\ COV(v,x) & V(v)
+\end{bmatrix}
+=
+\sigma_a^2 \cdot
+\begin{bmatrix}
+\frac{\Delta t^4}{4} & \frac{\Delta t^3}{2} \\ \frac{\Delta t^3}{2} & \Delta t^2
+\end{bmatrix}
+$$
+for a discrete noise model. If we instead assume the noise changes continuously over time,
+$$
+\boldsymbol{Q}_C = \int_0^{\Delta t} \boldsymbol{Q} dt = 
+\int_0^{\Delta t} \sigma_a^2 \cdot
+\begin{bmatrix}
+\frac{\Delta t^4}{4} & \frac{\Delta t^3}{2} \\ \frac{\Delta t^3}{2} & \Delta t^2
+\end{bmatrix} dt
+=
+\sigma_a^2 \cdot
+\begin{bmatrix}
+\frac{\Delta t^5}{20} & \frac{\Delta t^4}{8} \\ \frac{\Delta t^4}{8} & \frac{\Delta t^3}{3}
+\end{bmatrix}
+$$
+
+The process noise variance, $\sigma_a^2$, must be chosen based on reasonable expectations or calculated based on stochastic statistics formulas. We will later be attempting to tune this value using a neural network.
+
+## Measurement Equation
+
+In the 1D section, the measurement was denoted $z_n$. The measurement value represents a true system state in addition to the random measurement noise $v_n$, caused by the measurement device. The measurement noise variance $r_n$ can be constant or variable for each measurement depending on the situation (i.e., a set precision of a scale versus a percent/standard deviation precision of a thermometer). The generalized measurement equation in matrix form is given by:
+$$
+  \boldsymbol{z_n} = \boldsymbol{H} \boldsymbol{x_n} + \boldsymbol{v_n}
+$$
+where
+
+ - $\boldsymbol{z_n}$ is a measurement vector
+ - $\boldsymbol{H}$ is an `observation matrix`.
+ - $\boldsymbol{x_n}$ is a true system state (hidden state)
+ - $\boldsymbol{v_n}$ is a random noise vector.
+
+### The Observation Matrix, $\boldsymbol{H}$
+
+In many cases the measured value is not the desired system state, so we need to transform the system state (input) to the measurement (output). The purpose of $\boldsymbol{H}$ is to convert system state into outputs using linear transformations. 
+
+For example, assume we have a five-dimensional state vector. States 1, 3, and 5 are measurable, while states 2 and 4 are not. We would then define $\boldsymbol{H}$ such that
+
+$$
+\begin{aligned}
+  \boldsymbol{z_n} &= \boldsymbol{H} \boldsymbol{x_n} + \boldsymbol{v_n} \\
+  &= \begin{bmatrix}
+  1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 & 1
+  \end{bmatrix}
+  \begin{bmatrix}
+  x_1 \\ x_2 \\ x_3 \\ x_4 \\ x_5
+  \end{bmatrix}
+  + \boldsymbol{v_n} \\
+  &= \begin{bmatrix}
+  x_1 \\ x_3 \\ x_5
+  \end{bmatrix}
+  + \boldsymbol{v_n}
+\end{aligned}
+$$
+
+
+## State Update Equation
+
+$$
+  \boldsymbol{\hat{x}_{n,n}} = 
+  \boldsymbol{\hat{x}_{n,n-1}}
+  + \boldsymbol{K_n} \cdot (\boldsymbol{z_n} - \boldsymbol{H}
+  \cdot \boldsymbol{\hat{x}_{n,n-1}})
+$$
+where
+
+ - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at time step `n`.
+ - $\boldsymbol{\hat{x}_{n,n-1}}$ is a predicted system state vector from time step `n-1`.
+ - $\boldsymbol{K_n}$ is the Kalman Gain (in matrix form).
+ - $\boldsymbol{z_n}$ is a measurement.
+ - $\boldsymbol{H}$ is an observation matrix
+
+The term $(\boldsymbol{z_n} - \boldsymbol{H} \cdot \boldsymbol{\hat{x}_{n,n-1}})$ is the _innovation_. In our example above, it would yield:
+$$
+\begin{aligned}
+  (\boldsymbol{z_n} - \boldsymbol{H} \cdot \boldsymbol{\hat{x}_{n,n-1}}) &=
+  \begin{bmatrix}
+  z_1 \\ z_3 \\ z_5
+  \end{bmatrix} -
+  \begin{bmatrix}
+  1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 & 1
+  \end{bmatrix}
+  \begin{bmatrix}
+  \hat{x}_1 \\ \hat{x}_2 \\ \hat{x}_3 \\ \hat{x}_4 \\ \hat{x}_5
+  \end{bmatrix} \\
+  &= \begin{bmatrix}
+  (z_1 - \hat{x}_1) \\ (z_3 - \hat{x}_3) \\ (z_5 - \hat{x}_5)
+  \end{bmatrix}
+\end{aligned}
+$$
+so the Kalman Gain here must have dimensions $5 x 3$.
+
+## Covariance Update Equation
+
+$$
+\boldsymbol{P_{n,n}} = (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})
+\boldsymbol{P_{n,n-1}} (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})^T
++ \boldsymbol{K_n} \boldsymbol{R_n} \boldsymbol{K_n^T}
+$$
+where
+
+ - $\boldsymbol{P_{n,n}}$ is an estimate uncertainty (covariance) matrix of the current state
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
+
+This can also be simplified to
+$$
+\boldsymbol{P_{n,n}} = (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})
+\boldsymbol{P_{n,n-1}}
+$$
+using the Kalman Gain equation in the next section. However, this simpler version is far less stable, and even the smallest error in computing the Kalman Gain (due to round off) can lead to huge computation errors!
+
+## The Kalman Gain
+
+In matrix notation, we can represent the Kalman Gain as
+$$
+\boldsymbol{K_n} = \boldsymbol{P_{n,n-1}} \boldsymbol{H^T}
+(\boldsymbol{H} \boldsymbol{P_{n,n-1}} \boldsymbol{H^T} + \boldsymbol{R_n})^{-1}
+$$
+where
+
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
+
+The Kalman Filter is an _optimal filter_, so we will seek a Kalman Gain which minimizes the estimate variance; minimize the main diagonal of the covariance matrix $\boldsymbol{P_{n,n}}$. The sum of the main diagonal is called the _trace_. 
+We obtain the Kalman Gain equation above by rearranging the Covariance Update Equation, and then differentiating $tr(\boldsymbol{P_{n,n}})$ with respect to $\boldsymbol{K_n}$ and setting it equal to zero.
+
+## Summary
+
+Kalman Filter computations are based on five equations.
+
+Two prediction equations predict the system state at the next time step and provide the uncertainty of the prediction.
+
+ - _State Extrapolation Equation_ - prediction or estimation of the future state based on the known present estimation.
+ - _Covariance Extrapolation Equation_ - the measure of uncertainty in our prediction.
+
+Two update equations corrects the prediction and the uncertainty of the current state.
+
+ - _State Update Equation_ - estimation of the current state based on the known past estimation and present measurement.
+ - _Covariance Update Equation_ - the measure of uncertainty in our estimation
+ 
+and the _Kalman Gain Equation_, required for computation of the update equations. The Kalman Gain is a "weighting" parameter for the measurement and the past estimations when estimating the current state.
+
+The KF runs on a loop, alternating between Time Update ("Predict") and Measurement Update ("Correct"). 
+
+![_The equations involved in each phase of the KF loop._](images/kf-summary-equations.png){width=75%}
+
+The multi-dimensional linear KF equations (and some supplemental ones) are reproduced in the following sections.
+
+### State Extrapolation Equation
+
+$$
+  \boldsymbol{\hat{x}_{n+1,n}} = 
+  \boldsymbol{F} \cdot \boldsymbol{\hat{x}_{n,n}}
+  + \boldsymbol{G} \cdot \boldsymbol{\hat{u}_{n,n}}
+  + \boldsymbol{w_n}
+$$
+
+where 
+
+ - $\boldsymbol{\hat{x}_{n+1,n}}$ is a predicted system state vector at time step `n+1`.
+ - $\boldsymbol{F}$ is the state transition matrix.
+ - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at time step `n`.
+ - $\boldsymbol{G}$ is the control matrix or input transition matrix
+ - $\boldsymbol{\hat{u}_{n,n}}$ is a control variable or input variable; a measurable (deterministic) input to the system.
+ - $\boldsymbol{w_n}$ is a process noise or disturbance; an unmeasurable input that affects the state.
+
+### Covariance Extrapolation Equation
+
+$$
+  \boldsymbol{P_{n+1,n}} = \boldsymbol{F} \cdot \boldsymbol{P_{n,n}} \cdot \boldsymbol{F^T} + \boldsymbol{Q}
+$$
+where
+
+ - $\boldsymbol{P_{n,n}}$ is an estimate uncertainty (covariance) matrix of the current state.
+ - $\boldsymbol{P_{n+1,n}}$ is a predicted estimate uncertainty (covariance) matrix for the next state.
+ - $\boldsymbol{F}$ is a state transition matrix (derived in the previous section).
+ - $\boldsymbol{Q}$ is a process noise matrix.
+
+### State Update Equation
+
+$$
+  \boldsymbol{\hat{x}_{n,n}} = 
+  \boldsymbol{\hat{x}_{n,n-1}}
+  + \boldsymbol{K_n} \cdot (\boldsymbol{z_n} - \boldsymbol{H}
+  \cdot \boldsymbol{\hat{x}_{n,n-1}})
+$$
+where
+
+ - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at time step `n`.
+ - $\boldsymbol{\hat{x}_{n,n-1}}$ is a predicted system state vector from time step `n-1`.
+ - $\boldsymbol{K_n}$ is the Kalman Gain (in matrix form).
+ - $\boldsymbol{z_n}$ is a measurement.
+ - $\boldsymbol{H}$ is an observation matrix
+ 
+### Covariance Update Equation
+
+$$
+\boldsymbol{P_{n,n}} = (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})
+\boldsymbol{P_{n,n-1}} (\boldsymbol{I}-\boldsymbol{K_n} \boldsymbol{H})^T
++ \boldsymbol{K_n} \boldsymbol{R_n} \boldsymbol{K_n^T}
+$$
+where
+
+ - $\boldsymbol{P_{n,n}}$ is an estimate uncertainty (covariance) matrix of the current state
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
+ 
+### Kalman Gain Equation
+
+$$
+\boldsymbol{K_n} = \boldsymbol{P_{n,n-1}} \boldsymbol{H^T}
+(\boldsymbol{H} \boldsymbol{P_{n,n-1}} \boldsymbol{H^T} + \boldsymbol{R_n})^{-1}
+$$
+where
+
+ - $\boldsymbol{K_n}$ is the Kalman Gain
+ - $\boldsymbol{P_{n,n-1}}$ a prior estimate uncertainty (covariance) matrix of the current state (predicted at the previous state)
+ - $\boldsymbol{H}$ is an observation matrix
+ - $\boldsymbol{R_n}$ is a measurement uncertainty (measurement noise covariance matrix)
+
+### Auxiliary Equations
+
+#### Measurement Equation
+
+$$
+  \boldsymbol{z_n} = \boldsymbol{H} \boldsymbol{x_n} + \boldsymbol{v_n}
+$$
+where
+
+ - $\boldsymbol{z_n}$ is a measurement vector
+ - $\boldsymbol{H}$ is an `observation matrix`.
+ - $\boldsymbol{x_n}$ is a true system state (hidden state)
+ - $\boldsymbol{v_n}$ is a random noise vector.
+
+#### Covariance Equations
+
+The terms $\boldsymbol{w}$ and $\boldsymbol{v}$ which correspond to the process and measurement noise vectors do not typically appear directly in the equations of interest, since they are unknown, and are used to model the uncertainty/noise in the equations themselves. All covariance equations are covariance matrices in the form of 
+$$
+E(\boldsymbol{e} \cdot \boldsymbol{e^T}) \textrm{ ,}
+$$
+expectation of squared error.
+
+The measurement uncertainty is given by
+$$
+\boldsymbol{R_n} = E(\boldsymbol{v_n} \cdot \boldsymbol{v_n^T})
+$$
+where 
+
+ - $\boldsymbol{R_n}$ is a covariance matrix of the measurement.
+ - $\boldsymbol{v_n}$ is a measurement error.
+
+The process noise uncertainty is given by
+$$
+\boldsymbol{Q_n} = E(\boldsymbol{w_n} \cdot \boldsymbol{w_n^T}) \textrm{ ,}
+$$
+where 
+
+ - $\boldsymbol{Q_n}$ is a covariance matrix of the process noise.
+ - $\boldsymbol{w_n}$ is a process noise.
+
+The estimation uncertainty is given by
+$$
+\begin{aligned}
+\boldsymbol{P_{n,n}} &= E(\boldsymbol{e_n} \cdot \boldsymbol{e_n^T}) \\
+&= E((\boldsymbol{x_n}-\boldsymbol{\hat{x}_{n,n}})(\boldsymbol{x_n}-\boldsymbol{\hat{x}_{n,n}})^T)
+\end{aligned}
+$$
+where 
+
+ - $\boldsymbol{P_{n,n}}$ is a covariance matrix of the estimation error.
+ - $\boldsymbol{e_n}$ is an estimation error.
+ - $\boldsymbol{x_n}$ is a true system state (hidden state)
+ - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at timestep `n`.
+
+
+
+
+
+>>>>>>> 8d604f89e01a481536d03b5a5910200396a75ae8

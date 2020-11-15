@@ -9,6 +9,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+# load relevant functions
+source("functions/multiplot.R")
+```
+
+
 # Read in Data
 
 ```{r}
@@ -25,33 +31,97 @@ head(df)
 
 # Plot each variable's measurement, prediction, and state value
 
+```{r eval=FALSE}
+## couldn't get tidyverse to install in ubuntu
+# Data preparation
+# library(tidyverse)
+# df_x <- df %>%
+#   select(t, x_meas, x_pred, x) %>%
+#   gather(key = "variable", value = "value", -t)
+# head(df)
+```
+
+
 ```{r}
-attach(mtcars)
-par(mfrow=c(3,2))
+# load relevant functions
+source("functions/multiplot.R")
+library(ggplot2)
+# setup layout
+numPlots = 6
+cols = 2
+layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+
+
+
+# colors correspond to data column
+Variable = c("red")
+names(Variable) <- c("Measurement")
 # x
-with(df, plot(t,x_meas,type="l",col="red"))
-with(df, lines(t,x_pred,type="l",col="blue"))
-with(df, lines(t,x,type="l",col="green"))
+p_x <- ggplot(df, aes(x=t)) + 
+  geom_line(aes(y=x_meas,colour="red")) +
+  geom_line(aes(y=x_pred,colour="blue")) +
+  geom_line(aes(y=x,colour="green")) +
+  #scale_colour_manual(values=c("red,blue,green")) +
+  scale_fill_discrete(guide=FALSE) +
+  guides(fill=FALSE) +
+  #scale_fill_discrete(labels=c("Measurements", "Predictions", "State")) +
+  xlab("Timestep") +
+  ylab("") +
+  ggtitle("X")
 # y
-with(df, plot(t,y_meas,type="l",col="red"))
-with(df, lines(t,y_pred,type="l",col="blue"))
-with(df, lines(t,y,type="l",col="green"))
+p_y <- ggplot(df, aes(x=t)) + 
+  geom_line(aes(y=y_meas, colour="red")) +
+  geom_line(aes(y=y_pred, colour="blue")) +
+  geom_line(aes(y=y, colour="green")) +
+  scale_fill_discrete(guide=FALSE) +
+  xlab("Timestep") +
+  ylab("") +
+  ggtitle("Y")
 # xdot
-with(df, plot(t,xdot_meas,type="l",col="red"))
-with(df, lines(t,xdot_pred,type="l",col="blue"))
-with(df, lines(t,xdot,type="l",col="green"))
+p_xdot <- ggplot(df, aes(x=t)) + 
+  geom_line(aes(y=xdot_meas, colour="red")) +
+  geom_line(aes(y=xdot_pred, colour="blue")) +
+  geom_line(aes(y=xdot, colour="green")) +
+  scale_fill_discrete(guide=FALSE) +
+  xlab("Timestep") +
+  ylab("") +
+  ggtitle("X Velocity")
 # ydot
-with(df, plot(t,ydot_meas,type="l",col="red"))
-with(df, lines(t,ydot_pred,type="l",col="blue"))
-with(df, lines(t,ydot,type="l",col="green"))
+p_ydot <- ggplot(df, aes(x=t)) + 
+  geom_line(aes(y=ydot_meas, colour="red")) +
+  geom_line(aes(y=ydot_pred, colour="blue")) +
+  geom_line(aes(y=ydot, colour="green")) +
+  scale_fill_discrete(guide=FALSE) +
+  xlab("Timestep") +
+  ylab("") +
+  ggtitle("Y Velocity")
 # theta
-with(df, plot(t,theta_meas,type="l",col="red"))
-with(df, lines(t,theta_pred,type="l",col="blue"))
-with(df, lines(t,theta,type="l",col="green"))
+p_theta <- ggplot(df, aes(x=t)) + 
+  geom_line(aes(y=theta_meas, colour="red")) +
+  geom_line(aes(y=theta_pred, colour="blue")) +
+  geom_line(aes(y=theta, colour="green")) +
+  scale_fill_discrete(guide=FALSE) +
+  xlab("Timestep") +
+  ylab("") +
+  ggtitle("Heading")
 # yaw_rate
-with(df, plot(t,yaw_rate_meas,type="l",col="red"))
-with(df, lines(t,yaw_rate_pred,type="l",col="blue"))
-with(df, lines(t,yaw_rate,type="l",col="green"))
+p_yr <- ggplot(df, aes(x=t)) + 
+  geom_line(aes(y=yaw_rate_meas, colour="red")) +
+  geom_line(aes(y=yaw_rate_pred, colour="blue")) +
+  geom_line(aes(y=yaw_rate, colour="green")) +
+  scale_fill_discrete(guide=FALSE) +
+  xlab("Timestep") +
+  ylab("") +
+  ggtitle("Yaw Rate")
+# plot them all
+# p_x
+# p_y
+# p_xdot
+# p_ydot
+# p_theta
+# p_yr
+multiplot(p_x,p_y,p_xdot,p_ydot,p_theta,p_yr, cols=2)
 ```
 
 
