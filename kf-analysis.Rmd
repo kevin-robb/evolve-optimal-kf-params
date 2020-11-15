@@ -1,0 +1,64 @@
+---
+title: "kf-analysis"
+author: "Kevin Robb"
+date: "11/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read in Data
+
+```{r}
+# read in the data from the file
+dt = "2020-11-14-18-52-24"
+filename = paste("./data/kf_data_", dt,".csv", sep="")
+df=read.csv(filename)
+names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x","y","xdot","ydot","theta","yaw_rate")
+# add a timestep independent variable
+t = c(1:length(df$x_meas))
+df <- cbind(t, df)
+head(df)
+```
+
+# Plot each variable's measurement, prediction, and state value
+
+```{r}
+attach(mtcars)
+par(mfrow=c(3,2))
+# x
+with(df, plot(t,x_meas,type="l",col="red"))
+with(df, lines(t,x_pred,type="l",col="blue"))
+with(df, lines(t,x,type="l",col="green"))
+# y
+with(df, plot(t,y_meas,type="l",col="red"))
+with(df, lines(t,y_pred,type="l",col="blue"))
+with(df, lines(t,y,type="l",col="green"))
+# xdot
+with(df, plot(t,xdot_meas,type="l",col="red"))
+with(df, lines(t,xdot_pred,type="l",col="blue"))
+with(df, lines(t,xdot,type="l",col="green"))
+# ydot
+with(df, plot(t,ydot_meas,type="l",col="red"))
+with(df, lines(t,ydot_pred,type="l",col="blue"))
+with(df, lines(t,ydot,type="l",col="green"))
+# theta
+with(df, plot(t,theta_meas,type="l",col="red"))
+with(df, lines(t,theta_pred,type="l",col="blue"))
+with(df, lines(t,theta,type="l",col="green"))
+# yaw_rate
+with(df, plot(t,yaw_rate_meas,type="l",col="red"))
+with(df, lines(t,yaw_rate_pred,type="l",col="blue"))
+with(df, lines(t,yaw_rate,type="l",col="green"))
+```
+
+
+
+
+
+
+
+
+

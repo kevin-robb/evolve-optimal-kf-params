@@ -7,6 +7,8 @@ from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
 import time
 import numpy as np
+from getpass import getuser
+from datetime import datetime
 
 # the period the KF runs at (1/frequency)
 timer_period = 0.1 #seconds
@@ -39,16 +41,16 @@ cur_vel = None
 
 ## Kalman Filter variables
 # State, S, is just x, y, xdot, ydot
-S = np.array([0],[0],[0],[0]) #column vector
+#S = np.array([0],[0],[0],[0]) #column vector
 # State transition matrix, F
-F = np.array([1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1])
-F_trans = np.transpose(F)
+#F = np.array([1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1])
+#F_trans = np.transpose(F)
 # used for state extrapolation eqn: S(n+1) = F*S(n)
 # and covariance extrapolation eqn: P(n+1) = F*P(n)*F^T
 # Estimate uncertainty (covariance) matrix, P
-P = np.array(#TODO)
+#P = np.array(#TODO)
 # Process noise, Q
-Q = np.array(#TODO)
+#Q = np.array(#TODO)
 
 
 # init flag
@@ -76,6 +78,11 @@ process_noise = None
 
 ## Publishers
 state_pub = None
+# store data to be written to file
+data_for_file = []
+filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
+dt = None
+filename = None
 
 ## Kalman Filter functions
 def initialize():
@@ -192,6 +199,7 @@ def timer_callback(event):
         predict()
         measure()
         update()
+        save_to_file()
 
 ## print State to the console in a readable format
 def print_state():
@@ -224,10 +232,21 @@ def get_yaw_rate(imu_msg):
     global yaw_rate
     yaw_rate = imu_msg.angular_velocity.z
 
+## Save data to a file for evaluation
+def save_to_file():
+    global data_for_file
+    if filename is None:
+        return
+    data_for_file.append(Measurements + Predictions + State)
+    np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
+
 def main():
-    global state_pub
+    global state_pub, data_for_file, dt, filename
     # initalize the node in ROS
     rospy.init_node('kf_node')
+    data_for_file = []
+    dt = datetime.now()
+    filename = "kf_data_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
 
     ## Subscribe to Sensor Values
     # robot's current heading is already published by localization_node from IMU
