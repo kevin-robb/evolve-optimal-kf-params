@@ -31,98 +31,61 @@ head(df)
 
 # Plot each variable's measurement, prediction, and state value
 
-```{r eval=FALSE}
-## couldn't get tidyverse to install in ubuntu
-# Data preparation
-# library(tidyverse)
-# df_x <- df %>%
-#   select(t, x_meas, x_pred, x) %>%
-#   gather(key = "variable", value = "value", -t)
-# head(df)
-```
-
-
 ```{r}
-# load relevant functions
-source("functions/multiplot.R")
+library(reshape2)
 library(ggplot2)
+library(grid)
+library(gridExtra)
+
+# open the file for plotting
+plot_path = paste("./plots/kf_", dt, ".png", sep="")
+png(file=plot_path,width=1000,height=750)
+
+# subset each variable
+df_x = melt(df[,c(1,2,8,14)], id=c("t"))
+df_y = melt(df[,c(1,3,8,15)], id=c("t"))
+df_xdot = melt(df[,c(1,4,10,16)], id=c("t"))
+df_ydot = melt(df[,c(1,5,11,17)], id=c("t"))
+df_theta = melt(df[,c(1,6,12,18)], id=c("t"))
+df_yr = melt(df[,c(1,7,13,19)], id=c("t"))
+
 # setup layout
-numPlots = 6
-cols = 2
-layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
+layout <- matrix(seq(1, 6), ncol = 2, nrow = 3)
 
-
-
-# colors correspond to data column
-Variable = c("red")
-names(Variable) <- c("Measurement")
-# x
-p_x <- ggplot(df, aes(x=t)) + 
-  geom_line(aes(y=x_meas,colour="red")) +
-  geom_line(aes(y=x_pred,colour="blue")) +
-  geom_line(aes(y=x,colour="green")) +
-  #scale_colour_manual(values=c("red,blue,green")) +
-  scale_fill_discrete(guide=FALSE) +
-  guides(fill=FALSE) +
-  #scale_fill_discrete(labels=c("Measurements", "Predictions", "State")) +
-  xlab("Timestep") +
-  ylab("") +
-  ggtitle("X")
-# y
-p_y <- ggplot(df, aes(x=t)) + 
-  geom_line(aes(y=y_meas, colour="red")) +
-  geom_line(aes(y=y_pred, colour="blue")) +
-  geom_line(aes(y=y, colour="green")) +
-  scale_fill_discrete(guide=FALSE) +
-  xlab("Timestep") +
-  ylab("") +
-  ggtitle("Y")
-# xdot
-p_xdot <- ggplot(df, aes(x=t)) + 
-  geom_line(aes(y=xdot_meas, colour="red")) +
-  geom_line(aes(y=xdot_pred, colour="blue")) +
-  geom_line(aes(y=xdot, colour="green")) +
-  scale_fill_discrete(guide=FALSE) +
-  xlab("Timestep") +
-  ylab("") +
+# define all the plots
+p_x <- ggplot(df_x) + geom_line(aes(x=t,y=value,colour=variable)) +
+  scale_colour_manual(values=c("red","blue","green")) +
+  ggtitle("X Position")
+p_y <- ggplot(df_y) + geom_line(aes(x=t,y=value,colour=variable)) +
+  scale_colour_manual(values=c("red","blue","green")) +
+  ggtitle("Y Position")
+p_xdot <- ggplot(df_xdot) + geom_line(aes(x=t,y=value,colour=variable)) +
+  scale_colour_manual(values=c("red","blue","green")) +
   ggtitle("X Velocity")
-# ydot
-p_ydot <- ggplot(df, aes(x=t)) + 
-  geom_line(aes(y=ydot_meas, colour="red")) +
-  geom_line(aes(y=ydot_pred, colour="blue")) +
-  geom_line(aes(y=ydot, colour="green")) +
-  scale_fill_discrete(guide=FALSE) +
-  xlab("Timestep") +
-  ylab("") +
+p_ydot <- ggplot(df_ydot) + geom_line(aes(x=t,y=value,colour=variable)) +
+  scale_colour_manual(values=c("red","blue","green")) +
   ggtitle("Y Velocity")
-# theta
-p_theta <- ggplot(df, aes(x=t)) + 
-  geom_line(aes(y=theta_meas, colour="red")) +
-  geom_line(aes(y=theta_pred, colour="blue")) +
-  geom_line(aes(y=theta, colour="green")) +
-  scale_fill_discrete(guide=FALSE) +
-  xlab("Timestep") +
-  ylab("") +
+p_theta <- ggplot(df_theta) + geom_line(aes(x=t,y=value,colour=variable)) +
+  scale_colour_manual(values=c("red","blue","green")) +
   ggtitle("Heading")
-# yaw_rate
-p_yr <- ggplot(df, aes(x=t)) + 
-  geom_line(aes(y=yaw_rate_meas, colour="red")) +
-  geom_line(aes(y=yaw_rate_pred, colour="blue")) +
-  geom_line(aes(y=yaw_rate, colour="green")) +
-  scale_fill_discrete(guide=FALSE) +
-  xlab("Timestep") +
-  ylab("") +
+p_yr <- ggplot(df_yr) + geom_line(aes(x=t,y=value,colour=variable)) +
+  scale_colour_manual(values=c("red","blue","green")) +
   ggtitle("Yaw Rate")
-# plot them all
-# p_x
-# p_y
-# p_xdot
-# p_ydot
-# p_theta
-# p_yr
-multiplot(p_x,p_y,p_xdot,p_ydot,p_theta,p_yr, cols=2)
+
+# plot them
+# print(p_x)
+# print(p_y)
+# print(p_xdot)
+# print(p_ydot)
+# print(p_theta)
+# print(p_yr)
+grid.arrange(p_x,p_y,p_xdot,p_ydot,p_theta,p_yr, nrow=3)
+
+# close the file
+dev.off()
 ```
+
+
 
 
 
