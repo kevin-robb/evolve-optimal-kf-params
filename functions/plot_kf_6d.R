@@ -1,9 +1,11 @@
-# Plot Kalman Filter Data
+# Plot 6-Dimensional Kalman Filter Data.
 #
 # Generates a PNG graphing all six KF parameters' 
 # measured, predicted, and state values.
 #
-plot_kf_data <- function(filename, png=FALSE, w=1000,h=750) {
+# Also plot the ground truth for x and y position.
+#
+plot_kf_6d <- function(filename, png=FALSE, w=1000,h=750) {
   library(reshape2)
   library(ggplot2)
   library(grid)
@@ -13,7 +15,7 @@ plot_kf_data <- function(filename, png=FALSE, w=1000,h=750) {
   #filename = "kf_data_2020-11-14-18-52-24"
   filepath = paste("./data/", filename,".csv", sep="")
   df=read.csv(filepath)
-  names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x","y","xdot","ydot","theta","yaw_rate")
+  names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x","y","xdot","ydot","theta","yaw_rate","x_true","y_true","vel_true")
   # add a timestep independent variable
   t = c(1:length(df$x_meas))
   df <- cbind(t, df)
@@ -26,8 +28,8 @@ plot_kf_data <- function(filename, png=FALSE, w=1000,h=750) {
   }
   
   # subset each variable
-  df_x = melt(df[,c(1,2,8,14)], id=c("t"))
-  df_y = melt(df[,c(1,3,8,15)], id=c("t"))
+  df_x = melt(df[,c(1,2,8,14,20)], id=c("t"))
+  df_y = melt(df[,c(1,3,8,15,21)], id=c("t"))
   df_xdot = melt(df[,c(1,4,10,16)], id=c("t"))
   df_ydot = melt(df[,c(1,5,11,17)], id=c("t"))
   df_theta = melt(df[,c(1,6,12,18)], id=c("t"))
@@ -38,10 +40,10 @@ plot_kf_data <- function(filename, png=FALSE, w=1000,h=750) {
   
   # define all the plots
   p_x <- ggplot(df_x) + geom_line(aes(x=t,y=value,colour=variable)) +
-    scale_colour_manual(values=c("red","blue","green")) +
+    scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("X Position")
   p_y <- ggplot(df_y) + geom_line(aes(x=t,y=value,colour=variable)) +
-    scale_colour_manual(values=c("red","blue","green")) +
+    scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("Y Position")
   p_xdot <- ggplot(df_xdot) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green")) +

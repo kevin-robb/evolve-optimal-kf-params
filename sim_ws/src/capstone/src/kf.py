@@ -69,6 +69,8 @@ State = None
 Measurements = None
 # collection of predictions for state variables at next timestep
 Predictions = None
+# store the ground truth for position and velocity
+Truth = [0,0,0]
 
 ## Uncertainties. each is a column vector with the same number of elements
 meas_uncertainty = None
@@ -231,13 +233,22 @@ def get_cur_vel(vel_msg):
 def get_yaw_rate(imu_msg):
     global yaw_rate
     yaw_rate = imu_msg.angular_velocity.z
+def get_true_gps(gps_msg):
+    global Truth
+    if start_gps is None:
+        return
+    Truth[0] = (gps_msg.latitude - start_gps.latitude) * lon_to_m
+    Truth[1] = (gps_msg.longitude - start_gps.longitude) * lon_to_m
+def get_true_vel(vel_msg):
+    global Truth
+    Truth[2] = vel_msg.data
 
 ## Save data to a file for evaluation
 def save_to_file():
     global data_for_file
     if filename is None:
         return
-    data_for_file.append(Measurements + Predictions + State)
+    data_for_file.append(Measurements + Predictions + State + Truth)
     np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
 def main():
@@ -255,8 +266,11 @@ def main():
     rospy.Subscriber("/sim/gps", Gps, get_cur_gps, queue_size=1)
     # subscribe to the robot's current velocity
     rospy.Subscriber("/sim/velocity", Float32, get_cur_vel, queue_size=1)
-    # subscrive to the IMU to get the angular_velocity
+    # subscribe to the IMU to get the angular_velocity
     rospy.Subscriber("/sim/imu", Imu, get_yaw_rate, queue_size=1)
+    # subscribe to the Ground Truth (for KF comparison and training)
+    rospy.Subscriber("/truth/gps", Gps, get_true_gps, queue_size=1)
+    rospy.Subscriber("/truth/velocity", Float32, get_true_vel, queue_size=1)
 
     # publish the KF state for the localization to use
     state_pub = rospy.Publisher("/kf/state", Float32MultiArray, queue_size=1)
