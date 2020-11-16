@@ -248,7 +248,8 @@ def save_to_file():
     global data_for_file
     if filename is None:
         return
-    data_for_file.append(Measurements + Predictions + State + Truth)
+    x = [(cur_gps.latitude - start_gps.latitude) * lat_to_m]
+    data_for_file.append(x + Measurements[1:] + Predictions + State + Truth)
     np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
 def main():
