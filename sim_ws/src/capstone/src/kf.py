@@ -27,8 +27,8 @@ robot_axle_separation = 0.3 #meter
 cur_gps = None
 got_first_gps = False
 start_gps = None
-lat_to_m = 110949.14
-lon_to_m = 90765.78
+lat_to_m = 110944.33
+lon_to_m = 91058.93
 # - IMU '/sim/imu'
 cur_hdg = None # radians (0=north, increasing CW)
 yaw_rate = None
@@ -256,8 +256,14 @@ def main():
     # initalize the node in ROS
     rospy.init_node('kf_node')
     data_for_file = []
+    # use datetime to ensure unique filenames
     dt = datetime.now()
-    filename = "kf_data_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
+    # filename will specify:
+    #  obstacles (0,1=normal,2=hard)
+    obstacles = 0
+    #  noise (0,1=reduced,2=realistic)
+    noise = 2
+    filename = "kf_o" + str(obstacles) + "_n" + str(noise) + "_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
 
     ## Subscribe to Sensor Values
     # robot's current heading is already published by localization_node from IMU

@@ -13,9 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 source("functions/plot_kf_6d.R")
-#fname = "kf_data_2020-11-14-18-52-24"
-fname = "kf_data_2020-11-15-18-13-52"
-plot_kf_6d(filename=fname,png=FALSE)
+#fname = "kf_data_2020-11-15-18-13-52"
+#fname = "kf_o1_n2_2020-11-15-22-29-01"
+#fname = "kf_o0_n2_2020-11-15-22-37-32"
+fname = "kf_o0_n2_2020-11-15-22-48-37"
+plot_kf_6d(filename=fname,png=TRUE)
 ```
 
 
