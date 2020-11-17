@@ -12,7 +12,6 @@ plot_kf_6d <- function(filename, png=FALSE, w=1000,h=750) {
   library(gridExtra)
   
   # read in the data from the file
-  #filename = "kf_data_2020-11-14-18-52-24"
   filepath = paste("./data/", filename,".csv", sep="")
   df=read.csv(filepath)
   names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x","y","xdot","ydot","theta","yaw_rate","x_true","y_true","vel_true")
@@ -29,7 +28,7 @@ plot_kf_6d <- function(filename, png=FALSE, w=1000,h=750) {
   
   # subset each variable
   df_x = melt(df[,c(1,2,8,14,20)], id=c("t"))
-  df_y = melt(df[,c(1,3,8,15,21)], id=c("t"))
+  df_y = melt(df[,c(1,3,9,15,21)], id=c("t"))
   df_xdot = melt(df[,c(1,4,10,16)], id=c("t"))
   df_ydot = melt(df[,c(1,5,11,17)], id=c("t"))
   df_theta = melt(df[,c(1,6,12,18)], id=c("t"))
