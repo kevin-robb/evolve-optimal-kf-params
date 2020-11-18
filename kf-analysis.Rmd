@@ -20,7 +20,7 @@ source("functions/plot_with_track.R")
 #fname = "kf_o0_n2_2020-11-15-22-37-32"
 #fname = "kf_o0_n2_2020-11-15-22-48-37"
 fname = "kf_o0_n2_2020-11-15-23-19-13"
-plot_with_track(filename=fname,png=FALSE)
+plot_with_track(filename=fname,png=TRUE)
 ```
 
 # Debug time
@@ -54,34 +54,44 @@ df_yr = melt(df[,c(1,7,13,19)], id=c("t"))
 p_x <- ggplot(df_x) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green","black")) +
   ggtitle("X Position") + 
-  cowplot::theme_minimal_grid(12)
+  cowplot::theme_minimal_grid(12) + theme(legend.position="none")
 p_y <- ggplot(df_y) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green","black")) +
   ggtitle("Y Position") + 
-  cowplot::theme_minimal_grid(12)
+  cowplot::theme_minimal_grid(12) + theme(legend.position="none")
 p_xdot <- ggplot(df_xdot) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("X Velocity") + theme_minimal_grid(12)
+  ggtitle("X Velocity") + theme_minimal_grid(12) + theme(legend.position="none")
 p_ydot <- ggplot(df_ydot) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("Y Velocity") + theme_minimal_grid(12)
+  ggtitle("Y Velocity") + theme_minimal_grid(12) + theme(legend.position="none")
 p_theta <- ggplot(df_theta) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("Heading") + theme_minimal_grid(12)
+  ggtitle("Heading") + theme_minimal_grid(12) + theme(legend.position="none")
 p_yr <- ggplot(df_yr) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("Yaw Rate") + theme_minimal_grid(12)
+  ggtitle("Yaw Rate") + theme_minimal_grid(12) + theme(legend.position="none")
 
 # draw the robot's path (measured and true)
 #df_xp = melt(df[,c(1,2,8,14,20)], id=c("t"))
 #df_t = data.frame(x_meas=df[2],y=df[3])
 df_t = df[,c(1,2,8,14,20,3,9,15,21)]
 #names(df_t) <- c("t","x_meas","x_pred","x","x,true","y_meas","y_pred","y","y_true")
-p_t <- ggplot(df_t) + geom_line(aes(x_meas,y_meas,colour="red")) +
-  geom_line(aes(x_pred,y_pred,colour="blue")) +
-  geom_line(aes(x,y,colour="green")) +
-  geom_line(aes(x_true,y_true,colour="black")) +
-  theme_minimal_grid(12)
+```
+
+```{r}
+# track plot
+p_t <- ggplot(df_t) +
+  ggtitle("Robot Path (X vs Y)") +
+  xlab("Y Position") + ylab("X Position") +
+  geom_point(aes(y_meas,x_meas,colour="red")) +
+  geom_point(aes(y_pred,x_pred,colour="blue")) +
+  geom_point(aes(y,x,colour="green")) +
+  geom_point(aes(y_true,x_true,colour="black")) +
+  # scale_shape_discrete(name="Variable Shown",
+  #                     breaks=c("red","blue","green","black"),
+  #                     labels=c("Measured","Predicted","State","True")) +
+  theme_minimal_grid(12) + theme(legend.position="none")
 p_t
 ```
 
@@ -103,6 +113,11 @@ p_tot <- cowplot::plot_grid(p6, p_t, ncol=2)
 p_tot
 ```
 
+# save plot
+
+```{r}
+save_plot("plots/kf_o0_n2_2020-11-15-23-19-13_track.png",p_tot)
+```
 
 
 
