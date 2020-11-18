@@ -5,7 +5,7 @@
 #
 # Also plot the ground truth for x and y position.
 #
-plot_with_track <- function(filename, png=FALSE, w=1000,h=750) {
+plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
   library(reshape2)
   library(ggplot2)
   library(grid)
@@ -15,7 +15,7 @@ plot_with_track <- function(filename, png=FALSE, w=1000,h=750) {
   # read in the data from the file
   filepath = paste("./data/", filename, ".csv", sep="")
   df=read.csv(filepath)
-  names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x","y","xdot","ydot","theta","yaw_rate","x_true","y_true","vel_true")
+  names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x_state","y_state","xdot_state","ydot_state","theta_state","yaw_rate_state","x_true","y_true","vel_true")
   # add a timestep independent variable
   t = c(1:length(df$x_meas))
   df <- cbind(t, df)
@@ -29,31 +29,44 @@ plot_with_track <- function(filename, png=FALSE, w=1000,h=750) {
   df_theta = melt(df[,c(1,6,12,18)], id=c("t"))
   df_yr = melt(df[,c(1,7,13,19)], id=c("t"))
   
-  # define all the plots
+  # define the first plot (x-position)
   p_x <- ggplot(df_x) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("X Position") + 
-    cowplot::theme_minimal_grid(12) + theme(legend.position="none")
+    cowplot::theme_minimal_grid(12) +
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+  # save the legend before suppressing it
+  legend <- cowplot::get_legend(p_x)
+  p_x <- p_x + theme(legend.position="none")
+  
+  # define all the other plots (w/o legend)
   p_y <- ggplot(df_y) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("Y Position") + 
-    cowplot::theme_minimal_grid(12) + theme(legend.position="none")
+    cowplot::theme_minimal_grid(12) + theme(legend.position="none") +
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
   p_xdot <- ggplot(df_xdot) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green")) +
-    ggtitle("X Velocity") + theme_minimal_grid(12) + theme(legend.position="none")
+    ggtitle("X Velocity") + theme_minimal_grid(12) + theme(legend.position="none") +
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
   p_ydot <- ggplot(df_ydot) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green")) +
-    ggtitle("Y Velocity") + theme_minimal_grid(12) + theme(legend.position="none")
+    ggtitle("Y Velocity") + theme_minimal_grid(12) + theme(legend.position="none") +
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
   p_theta <- ggplot(df_theta) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green")) +
-    ggtitle("Heading") + theme_minimal_grid(12) + theme(legend.position="none")
+    ggtitle("Heading") + theme_minimal_grid(12) + theme(legend.position="none") +
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
   p_yr <- ggplot(df_yr) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green")) +
-    ggtitle("Yaw Rate") + theme_minimal_grid(12) + theme(legend.position="none")
+    ggtitle("Yaw Rate") + theme_minimal_grid(12) + theme(legend.position="none") +
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
   
   # draw the robot's path (measured and true)
   df_t = df[,c(1,2,8,14,20,3,9,15,21)]
   #names(df_t) <- c("t","x_meas","x_pred","x","x,true","y_meas","y_pred","y","y_true")
+
+  # track plot
   p_t <- ggplot(df_t) +
     scale_x_reverse() +
     ggtitle("Robot Path (X vs Y)") +
@@ -61,27 +74,38 @@ plot_with_track <- function(filename, png=FALSE, w=1000,h=750) {
     geom_point(aes(y_true,x_true), color="black") +
     geom_point(aes(y_meas,x_meas), color="red") +
     geom_point(aes(y_pred,x_pred),color="blue") +
-    geom_point(aes(y,x),color="green") +
+    geom_point(aes(y_state,x_state),color="green") +
     theme_minimal_grid(12) #+ theme(legend.position="none")
+  p_t
   
-  # plot them using cowplot for alignment & layout
-  ptl <- cowplot::align_plots(p_x,p_xdot,align='v',axis='lr')
-  ptr <- cowplot::align_plots(p_y,p_ydot,align='v',axis='lr')
+  ## combine plots
+
+  # main 4 plots (x,y,xdot,ydot) will be left side
+  ptl <- cowplot::align_plots(p_x,p_xdot,align='v')
+  ptr <- cowplot::align_plots(p_y,p_ydot,align='v')
   pl <- cowplot::plot_grid(ptl[[1]], ptr[[1]], ncol=2)
   pr <- cowplot::plot_grid(ptl[[2]],ptr[[2]], ncol=2)
+  p_left <- cowplot::plot_grid(pl,pr,ncol=1)
   
-  plb <- cowplot::align_plots(pl,p_theta,align='v',axis='lr')
-  prb <- cowplot::align_plots(pr,p_yr,align='v',axis='lr')
-  pb <- cowplot::plot_grid(plb[[2]],prb[[2]],ncol=2)
+  # top right will be the track and legend
+  p_right <- cowplot::plot_grid(p_t, legend, ncol=2, rel_widths=c(2,1))
   
-  p6 <- cowplot::plot_grid(pl,pr,pb,ncol=1) #main 6
+  if (plot_hdg == TRUE) {
+    # yaw & yaw_rate
+    plb <- cowplot::align_plots(pl,p_theta,align='v')
+    prb <- cowplot::align_plots(pr,p_yr,align='v')
+    pb <- cowplot::plot_grid(plb[[2]],prb[[2]],ncol=2)
+    # right side will be track+legend above yaw+yaw_rate
+    p_right <- cowplot::plot_grid(p_right,pb,ncol=1,rel_heights=c(2,1))
+  }
   
-  p_tot <- cowplot::plot_grid(p6, p_t, ncol=2) #add track
+  # make overall plot
+  p_tot <- cowplot::plot_grid(p_left,p_right,ncol=2,rel_widths=c(3,2))
   p_tot
   
   if (png == TRUE) {
     plot_path = paste("./plots/", filename, "_track", ".png", sep="")
-    save_plot(plot_path,p_tot)
+    cowplot::save_plot(plot_path,p_tot,base_height=4,base_width=6)
   }
   
 }
