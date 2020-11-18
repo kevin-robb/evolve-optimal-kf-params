@@ -237,7 +237,7 @@ def get_true_gps(gps_msg):
     global Truth
     if start_gps is None:
         return
-    Truth[0] = (gps_msg.latitude - start_gps.latitude) * lon_to_m
+    Truth[0] = (gps_msg.latitude - start_gps.latitude) * lat_to_m
     Truth[1] = (gps_msg.longitude - start_gps.longitude) * lon_to_m
 def get_true_vel(vel_msg):
     global Truth
