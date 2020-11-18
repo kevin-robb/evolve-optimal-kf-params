@@ -34,7 +34,7 @@ library(cowplot)
 # read in the data from the file
 filepath = paste("./data/", filename, ".csv", sep="")
 df=read.csv(filepath)
-names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x","y","xdot","ydot","theta","yaw_rate","x_true","y_true","vel_true")
+names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x_state","y_state","xdot_state","ydot_state","theta_state","yaw_rate_state","x_true","y_true","vel_true")
 # add a timestep independent variable
 t = c(1:length(df$x_meas))
 df <- cbind(t, df)
@@ -48,36 +48,45 @@ df_ydot = melt(df[,c(1,5,11,17)], id=c("t"))
 df_theta = melt(df[,c(1,6,12,18)], id=c("t"))
 df_yr = melt(df[,c(1,7,13,19)], id=c("t"))
 
-# define all the plots
+# define the first plot (x-position)
 p_x <- ggplot(df_x) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green","black")) +
   ggtitle("X Position") + 
-  cowplot::theme_minimal_grid(12) + theme(legend.position="none")
+  cowplot::theme_minimal_grid(12) +
+  theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+# save the legend before suppressing it
+legend <- cowplot::get_legend(p_x)
+p_x <- p_x + theme(legend.position="none")
+
+# define all the other plots (w/o legend)
 p_y <- ggplot(df_y) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green","black")) +
   ggtitle("Y Position") + 
-  cowplot::theme_minimal_grid(12) + theme(legend.position="none")
+  cowplot::theme_minimal_grid(12) + theme(legend.position="none") +
+  theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
 p_xdot <- ggplot(df_xdot) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("X Velocity") + theme_minimal_grid(12) + theme(legend.position="none")
+  ggtitle("X Velocity") + theme_minimal_grid(12) + theme(legend.position="none") +
+  theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
 p_ydot <- ggplot(df_ydot) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("Y Velocity") + theme_minimal_grid(12) + theme(legend.position="none")
+  ggtitle("Y Velocity") + theme_minimal_grid(12) + theme(legend.position="none") +
+  theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
 p_theta <- ggplot(df_theta) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("Heading") + theme_minimal_grid(12) + theme(legend.position="none")
+  ggtitle("Heading") + theme_minimal_grid(12) + theme(legend.position="none") +
+  theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
 p_yr <- ggplot(df_yr) + geom_line(aes(x=t,y=value,colour=variable)) +
   scale_colour_manual(values=c("red","blue","green")) +
-  ggtitle("Yaw Rate") + theme_minimal_grid(12) + theme(legend.position="none")
+  ggtitle("Yaw Rate") + theme_minimal_grid(12) + theme(legend.position="none") +
+  theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
 
 # draw the robot's path (measured and true)
-#df_xp = melt(df[,c(1,2,8,14,20)], id=c("t"))
-#df_t = data.frame(x_meas=df[2],y=df[3])
 df_t = df[,c(1,2,8,14,20,3,9,15,21)]
 #names(df_t) <- c("t","x_meas","x_pred","x","x,true","y_meas","y_pred","y","y_true")
 ```
 
-#@ plot track
+## plot track
 
 ```{r}
 # track plot
@@ -88,7 +97,7 @@ p_t <- ggplot(df_t) +
   geom_point(aes(y_true,x_true), color="black") +
   geom_point(aes(y_meas,x_meas), color="red") +
   geom_point(aes(y_pred,x_pred),color="blue") +
-  geom_point(aes(y,x),color="green") +
+  geom_point(aes(y_state,x_state),color="green") +
   theme_minimal_grid(12) #+ theme(legend.position="none")
 p_t
 ```
@@ -96,20 +105,25 @@ p_t
 ## combine plots
 
 ```{r}
-# plot them
+# p_t defined above will be quadrant 1 (top right)
+# quadrant 2 (top left)
 ptl <- cowplot::align_plots(p_x,p_xdot,align='v')
 ptr <- cowplot::align_plots(p_y,p_ydot,align='v')
 pl <- cowplot::plot_grid(ptl[[1]], ptr[[1]], ncol=2)
 pr <- cowplot::plot_grid(ptl[[2]],ptr[[2]], ncol=2)
-
+#pq2 <- cowplot::plot_grid(pl,pr,ncol=1)
+# quadrant 3 (bottom left)
 plb <- cowplot::align_plots(pl,p_theta,align='v')
 prb <- cowplot::align_plots(pr,p_yr,align='v')
 pb <- cowplot::plot_grid(plb[[2]],prb[[2]],ncol=2)
-
+# get 6 plots (quadrants 2 and 3)
 p6 <- cowplot::plot_grid(pl,pr,pb,ncol=1)
-#p6
-
-p_tot <- cowplot::plot_grid(p6, p_t, ncol=2)
+# legend is defined above
+# combine right side
+#p_rt <- cowplot::plot_grid(p_t,legend,ncol=1)
+# make overall plot
+#p_tot <- cowplot::plot_grid(p6, p_rt, ncol=2)
+p_tot <- cowplot::plot_grid(p6, p_t, legend, ncol=3, rel_widths=c(4,2,1))
 p_tot
 ```
 
