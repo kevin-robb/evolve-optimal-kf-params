@@ -55,19 +55,16 @@ plot_with_track <- function(filename, png=FALSE, w=1000,h=750) {
   df_t = df[,c(1,2,8,14,20,3,9,15,21)]
   #names(df_t) <- c("t","x_meas","x_pred","x","x,true","y_meas","y_pred","y","y_true")
   p_t <- ggplot(df_t) +
+    scale_x_reverse() +
     ggtitle("Robot Path (X vs Y)") +
     xlab("Y Position") + ylab("X Position") +
-    geom_point(aes(y_meas,x_meas,colour="red")) +
-    geom_point(aes(y_pred,x_pred,colour="blue")) +
-    geom_point(aes(y,x,colour="green")) +
-    geom_point(aes(y_true,x_true,colour="black")) +
-    # scale_shape_discrete(name="Variable Shown",
-    #                     breaks=c("red","blue","green","black"),
-    #                     labels=c("Measured","Predicted","State","True")) +
-    theme_minimal_grid(12) + theme(legend.position="none")
+    geom_point(aes(y_true,x_true), color="black") +
+    geom_point(aes(y_meas,x_meas), color="red") +
+    geom_point(aes(y_pred,x_pred),color="blue") +
+    geom_point(aes(y,x),color="green") +
+    theme_minimal_grid(12) #+ theme(legend.position="none")
   
   # plot them using cowplot for alignment & layout
-  #grid.arrange(p_x,p_y,p_xdot,p_ydot,p_theta,p_yr, nrow=3)
   ptl <- cowplot::align_plots(p_x,p_xdot,align='v',axis='lr')
   ptr <- cowplot::align_plots(p_y,p_ydot,align='v',axis='lr')
   pl <- cowplot::plot_grid(ptl[[1]], ptr[[1]], ncol=2)
@@ -84,7 +81,6 @@ plot_with_track <- function(filename, png=FALSE, w=1000,h=750) {
   
   if (png == TRUE) {
     plot_path = paste("./plots/", filename, "_track", ".png", sep="")
-    png(file=plot_path,width=w,height=h)
     save_plot(plot_path,p_tot)
   }
   

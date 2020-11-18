@@ -15,19 +15,16 @@ knitr::opts_chunk$set(echo = TRUE)
 #library(cowplot)
 #source("functions/plot_kf_6d.R")
 source("functions/plot_with_track.R")
-#fname = "kf_data_2020-11-15-18-13-52"
-#fname = "kf_o1_n2_2020-11-15-22-29-01"
-#fname = "kf_o0_n2_2020-11-15-22-37-32"
-#fname = "kf_o0_n2_2020-11-15-22-48-37"
-#fname = "kf_o0_n2_2020-11-15-23-19-13"
 fname = "kf_o0_n2_2020-11-17-22-42-42"
 plot_with_track(filename=fname,png=TRUE)
 ```
 
 # Debug time
 
+## setup data
+
 ```{r}
-filename = "kf_o0_n2_2020-11-15-23-19-13"
+filename = "kf_o0_n2_2020-11-17-22-42-42"
 library(reshape2)
 library(ggplot2)
 library(grid)
@@ -80,21 +77,23 @@ df_t = df[,c(1,2,8,14,20,3,9,15,21)]
 #names(df_t) <- c("t","x_meas","x_pred","x","x,true","y_meas","y_pred","y","y_true")
 ```
 
+#@ plot track
+
 ```{r}
 # track plot
 p_t <- ggplot(df_t) +
+  scale_x_reverse() +
   ggtitle("Robot Path (X vs Y)") +
   xlab("Y Position") + ylab("X Position") +
-  geom_point(aes(y_meas,x_meas,colour="red")) +
-  geom_point(aes(y_pred,x_pred,colour="blue")) +
-  geom_point(aes(y,x,colour="green")) +
-  geom_point(aes(y_true,x_true,colour="black")) +
-  # scale_shape_discrete(name="Variable Shown",
-  #                     breaks=c("red","blue","green","black"),
-  #                     labels=c("Measured","Predicted","State","True")) +
-  theme_minimal_grid(12) + theme(legend.position="none")
+  geom_point(aes(y_true,x_true), color="black") +
+  geom_point(aes(y_meas,x_meas), color="red") +
+  geom_point(aes(y_pred,x_pred),color="blue") +
+  geom_point(aes(y,x),color="green") +
+  theme_minimal_grid(12) #+ theme(legend.position="none")
 p_t
 ```
+
+## combine plots
 
 ```{r}
 # plot them
@@ -114,10 +113,11 @@ p_tot <- cowplot::plot_grid(p6, p_t, ncol=2)
 p_tot
 ```
 
-# save plot
+## save plot
 
 ```{r}
-save_plot("plots/kf_o0_n2_2020-11-15-23-19-13_track.png",p_tot)
+plot_path = paste("./plots/", filename, "_track", ".png", sep="")
+save_plot(plot_path,p_tot)
 ```
 
 
