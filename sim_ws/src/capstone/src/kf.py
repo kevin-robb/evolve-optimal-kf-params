@@ -7,6 +7,8 @@ from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
 import time
 import numpy as np
+from getpass import getuser
+from datetime import datetime
 
 # the period the KF runs at (1/frequency)
 timer_period = 0.1 #seconds
@@ -25,8 +27,8 @@ robot_axle_separation = 0.3 #meter
 cur_gps = None
 got_first_gps = False
 start_gps = None
-lat_to_m = 110949.14
-lon_to_m = 90765.78
+lat_to_m = 110944.33
+lon_to_m = 91058.93
 # - IMU '/sim/imu'
 cur_hdg = None # radians (0=north, increasing CW)
 yaw_rate = None
@@ -39,16 +41,16 @@ cur_vel = None
 
 ## Kalman Filter variables
 # State, S, is just x, y, xdot, ydot
-S = np.array([0],[0],[0],[0]) #column vector
+#S = np.array([0],[0],[0],[0]) #column vector
 # State transition matrix, F
-F = np.array([1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1])
-F_trans = np.transpose(F)
+#F = np.array([1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1])
+#F_trans = np.transpose(F)
 # used for state extrapolation eqn: S(n+1) = F*S(n)
 # and covariance extrapolation eqn: P(n+1) = F*P(n)*F^T
 # Estimate uncertainty (covariance) matrix, P
-P = np.array(#TODO)
+#P = np.array(#TODO)
 # Process noise, Q
-Q = np.array(#TODO)
+#Q = np.array(#TODO)
 
 
 # init flag
@@ -67,6 +69,8 @@ State = None
 Measurements = None
 # collection of predictions for state variables at next timestep
 Predictions = None
+# store the ground truth for position and velocity
+Truth = [0,0,0]
 
 ## Uncertainties. each is a column vector with the same number of elements
 meas_uncertainty = None
@@ -76,6 +80,11 @@ process_noise = None
 
 ## Publishers
 state_pub = None
+# store data to be written to file
+data_for_file = []
+filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
+dt = None
+filename = None
 
 ## Kalman Filter functions
 def initialize():
@@ -192,6 +201,7 @@ def timer_callback(event):
         predict()
         measure()
         update()
+        save_to_file()
 
 ## print State to the console in a readable format
 def print_state():
@@ -223,11 +233,37 @@ def get_cur_vel(vel_msg):
 def get_yaw_rate(imu_msg):
     global yaw_rate
     yaw_rate = imu_msg.angular_velocity.z
+def get_true_gps(gps_msg):
+    global Truth
+    if start_gps is None:
+        return
+    Truth[0] = (gps_msg.latitude - start_gps.latitude) * lat_to_m
+    Truth[1] = (gps_msg.longitude - start_gps.longitude) * lon_to_m
+def get_true_vel(vel_msg):
+    global Truth
+    Truth[2] = vel_msg.data
+
+## Save data to a file for evaluation
+def save_to_file():
+    global data_for_file
+    if filename is None:
+        return
+    data_for_file.append(Measurements + Predictions + State + Truth)
+    np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
 def main():
-    global state_pub
+    global state_pub, data_for_file, dt, filename
     # initalize the node in ROS
     rospy.init_node('kf_node')
+    data_for_file = []
+    # use datetime to ensure unique filenames
+    dt = datetime.now()
+    # filename will specify:
+    #  obstacles (0,1=normal,2=hard)
+    obstacles = 0
+    #  noise (0,1=reduced,2=realistic)
+    noise = 2
+    filename = "kf_o" + str(obstacles) + "_n" + str(noise) + "_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
 
     ## Subscribe to Sensor Values
     # robot's current heading is already published by localization_node from IMU
@@ -236,8 +272,11 @@ def main():
     rospy.Subscriber("/sim/gps", Gps, get_cur_gps, queue_size=1)
     # subscribe to the robot's current velocity
     rospy.Subscriber("/sim/velocity", Float32, get_cur_vel, queue_size=1)
-    # subscrive to the IMU to get the angular_velocity
+    # subscribe to the IMU to get the angular_velocity
     rospy.Subscriber("/sim/imu", Imu, get_yaw_rate, queue_size=1)
+    # subscribe to the Ground Truth (for KF comparison and training)
+    rospy.Subscriber("/truth/gps", Gps, get_true_gps, queue_size=1)
+    rospy.Subscriber("/truth/velocity", Float32, get_true_vel, queue_size=1)
 
     # publish the KF state for the localization to use
     state_pub = rospy.Publisher("/kf/state", Float32MultiArray, queue_size=1)

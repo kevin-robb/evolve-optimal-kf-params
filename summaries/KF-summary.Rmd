@@ -1,7 +1,7 @@
 ---
 title: "KF-summaries"
 author: "Kevin Robb"
-date: "9/8/2020"
+date: "11/13/2020"
 output:
   html_document:
     df_print: paged
@@ -76,7 +76,6 @@ This process follows the procedure described in the following flow chart:
 An initial estimate is required to kick off the KF process, but it need not be very precise. Following this procedure yields something like the following:
 
 ![_Results of running the KF for ten timesteps._](images/kf-process-results.png){width=75%}
-
 
 
 ### Side Note
@@ -680,8 +679,3 @@ where
  - $\boldsymbol{e_n}$ is an estimation error.
  - $\boldsymbol{x_n}$ is a true system state (hidden state)
  - $\boldsymbol{\hat{x}_{n,n}}$ is an estimated system state vector at timestep `n`.
-
-
-
-
-
