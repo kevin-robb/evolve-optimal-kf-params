@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
@@ -48,28 +48,33 @@ initialized = False
 #   State[3] = current y-velocity in m/s
 #   State[4] = current heading in radians (0=north, increasing CW)
 #   State[5] = current yaw rate (angular velocity about z-axis) of robot in rad/s
-State = None #[None, None, None, None, None, None]
+State = None
 # collection of measurement values/calculations of state variables
-Measurements = None #[None, None, None, None, None, None]
+Measurements = None
 # collection of predictions for state variables at next timestep
-Predictions = None #[None, None, None, None, None, None]
+Predictions = None
 
 ## Uncertainties. each is a column vector with the same number of elements
-meas_uncertainty = None #[None, None, None, None, None, None]
-est_uncertainty = None #[None, None, None, None, None, None]
-kalman_gain = None #[None, None, None, None, None, None]
+meas_uncertainty = None
+est_uncertainty = None
+kalman_gain = None
+process_noise = None
+
+## Publishers
+state_pub = None
 
 ## Kalman Filter functions
 def initialize():
-    global initialized, est_uncertainty, meas_uncertainty, State
+    global initialized, est_uncertainty, meas_uncertainty, State, process_noise
     ## set estimate uncertainty initial guess
     est_uncertainty = [5.0,5.0,5.0,5.0,5.0,5.0]
 
     ## set system state initial guess
     State = [0,0,0,0,0,0]
 
-    # set measurement uncertainties that don't change as it runs
+    # set measurement uncertainties and process noise that don't change as it runs
     meas_uncertainty = [5.0, 5.0, 3.0, 3.0, 1.0, 1.0]
+    process_noise = [10.0, 10.0, 15.0, 15.0, 10.0, 15.0]
 
     if cur_gps is not None and start_gps is not None and cur_hdg is not None and cur_vel is not None and yaw_rate is not None:
         ## set initialized flag
@@ -78,7 +83,7 @@ def initialize():
 
 
 def predict():
-    global Predictions
+    global Predictions, est_uncertainty
     if Predictions is None:
         Predictions = [0,0,0,0,0,0]
     if State is None:
@@ -97,7 +102,16 @@ def predict():
     Predictions[5] = State[5]
 
     ## extrapolate the estimate uncertainty
-    # assume constant for now TODO
+    # assume constant for velocities and follow dynamic model for positions
+    for i in range(len(est_uncertainty)):
+        if i == 0 or i == 1 or i == 4:
+            # x, y, or yaw.
+            # update using dynamic model and velocity est uncertainties
+            est_uncertainty[i] += timer_period**2 * est_uncertainty[i+1]
+        else: #i == 2 or i == 3 or i == 5:
+            # x-vel, y-vel, or yaw rate. 
+            # constant velocity model, so do nothing
+            pass
 
     print_state()
 
@@ -113,12 +127,12 @@ def measure():
     ## input measured values
     # store current x,y position from GPS
     if cur_gps is not None and start_gps is not None:
-        Measurements[0] = (cur_gps.longitude - start_gps.longitude) * lon_to_m
-        Measurements[1] = (cur_gps.latitude - start_gps.latitude) * lat_to_m
+        Measurements[1] = (cur_gps.longitude - start_gps.longitude) * lon_to_m
+        Measurements[0] = (cur_gps.latitude - start_gps.latitude) * lat_to_m
     # store x,y velocity. need to use heading to do so
     if cur_vel is not None and cur_hdg is not None:
-        Measurements[2] = cur_vel * cos(cur_hdg)
-        Measurements[3] = cur_vel * sin(cur_hdg)
+        Measurements[3] = cur_vel * cos(cur_hdg)
+        Measurements[2] = cur_vel * sin(cur_hdg)
     # store heading from IMU calculated in localization_node
     if cur_hdg is not None:
         Measurements[4] = cur_hdg
@@ -127,6 +141,7 @@ def measure():
         Measurements[5] = yaw_rate
 
     #print("Measurements:", Measurements)
+    print_innovation()
 
 def update():
     global kalman_gain, State, est_uncertainty
@@ -149,6 +164,11 @@ def update():
     ## update the current estimate uncertainty
     for i in range(len(est_uncertainty)):
         est_uncertainty[i] *= (1-kalman_gain[i])
+    
+    ## publish the state for the robot to use
+    state_msg = Float32MultiArray()
+    state_msg.data = State
+    state_pub.publish(state_msg)
 
 ## Run the KF
 def timer_callback(event):
@@ -164,6 +184,12 @@ def print_state():
     line = "State: x=" + "{:.2f}".format(State[0]) + ", y=" + "{:.2f}".format(State[1]) \
         + ", x-vel=" + "{:.2f}".format(State[2]) + ", y-vel=" + "{:.2f}".format(State[3]) \
         + ", hdg=" + "{:.2f}".format(degrees(State[4])) + ", yaw-rate=" + "{:.2f}".format(degrees(State[5]))
+    print(line)
+## print innovation to the console in a readable format
+def print_innovation():
+    line = "Innovation: x=" + "{:.2f}".format(State[0]-Measurements[0]) + ", y=" + "{:.2f}".format(State[1]-Measurements[1]) \
+        + ", x-vel=" + "{:.2f}".format(State[2]-Measurements[2]) + ", y-vel=" + "{:.2f}".format(State[3]-Measurements[3]) \
+        + ", hdg=" + "{:.2f}".format(degrees(State[4]-Measurements[4])) + ", yaw-rate=" + "{:.2f}".format(degrees(State[5]-Measurements[5]))
     print(line)
 
 ## Functions to receive sensor readings. 
@@ -185,6 +211,7 @@ def get_yaw_rate(imu_msg):
     yaw_rate = imu_msg.angular_velocity.z
 
 def main():
+    global state_pub
     # initalize the node in ROS
     rospy.init_node('kf_node')
 
@@ -197,6 +224,9 @@ def main():
     rospy.Subscriber("/sim/velocity", Float32, get_cur_vel, queue_size=1)
     # subscrive to the IMU to get the angular_velocity
     rospy.Subscriber("/sim/imu", Imu, get_yaw_rate, queue_size=1)
+
+    # publish the KF state for the localization to use
+    state_pub = rospy.Publisher("/kf/state", Float32MultiArray, queue_size=1)
     
     # create timer with a period of 0.1 (10 Hz)
     rospy.Timer(rospy.Duration(timer_period), timer_callback)

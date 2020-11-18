@@ -3,7 +3,7 @@
 import rospy
 from math import pi, sqrt
 from tf import transformations
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray
 from sensor_msgs.msg import Imu
 from swc_msgs.msg import Gps
 from swc_msgs.srv import Waypoints
@@ -25,21 +25,33 @@ lat_to_m = 110949.14
 lon_to_m = 90765.78
 error_margin_lat = 1/lat_to_m
 error_margin_lon = 1/lon_to_m
+## kalman filter integration
+# KF state
+State = []
+# relative position of robot to start (in m), output by the KF
+kf_pos = Gps()
 
 def interpret_waypoints(waypoints):
     global start_gps, bonus_gps, goal_gps, visited, wp_interpreted
     # first waypoint is start location
     start_gps = waypoints.waypoints[0]
-    # next three waypoints are bonuses
-    bonus_gps.append(waypoints.waypoints[1])
-    bonus_gps.append(waypoints.waypoints[2])
-    bonus_gps.append(waypoints.waypoints[3])
+    # next three waypoints are bonuses. save them in meters relative to start
+    bonus_gps.append(make_rel_gps(waypoints.waypoints[1]))
+    bonus_gps.append(make_rel_gps(waypoints.waypoints[2]))
+    bonus_gps.append(make_rel_gps(waypoints.waypoints[3]))
     # last waypoint is goal location
-    goal_gps = waypoints.waypoints[4]
+    goal_gps = make_rel_gps(waypoints.waypoints[4])
     # initialize, no points have been visited yet
     visited = [False, False, False]
     wp_interpreted = True
     print("waypoints interpreted")
+
+def make_rel_gps(global_gps):
+    # transform a GPS waypoint from global GPS to meters relative to start
+    rel_m = Gps()
+    rel_m.longitude = (global_gps.longitude - start_gps.longitude) * lon_to_m
+    rel_m.latitude = (global_gps.latitude - start_gps.latitude) * lat_to_m
+    return rel_m
 
 def arrived_at_point(point_gps):
     if point_gps.latitude - robot_gps.latitude < error_margin_lat and point_gps.longitude - robot_gps.longitude < error_margin_lon:
@@ -74,37 +86,37 @@ def pub_next_pt():
     # bonus waypoint 1
     if not visited[0]:
         #print("going for point 1")
-        rel.latitude = bonus_gps[0].latitude - robot_gps.latitude
-        rel.longitude = bonus_gps[0].longitude - robot_gps.longitude
+        rel.latitude = bonus_gps[0].latitude - kf_pos.latitude
+        rel.longitude = bonus_gps[0].longitude - kf_pos.longitude
         loc_pub.publish(rel)
         pub_dist_to_next_pt(bonus_gps[0])
     # bonus waypoint 2
     elif not visited[1]:
         #print("going for point 2")
-        rel.latitude = bonus_gps[1].latitude - robot_gps.latitude
-        rel.longitude = bonus_gps[1].longitude - robot_gps.longitude
+        rel.latitude = bonus_gps[1].latitude - kf_pos.latitude
+        rel.longitude = bonus_gps[1].longitude - kf_pos.longitude
         loc_pub.publish(rel)
         pub_dist_to_next_pt(bonus_gps[1])
     # bonus waypoint 3
     elif not visited[2]:
         #print("going for point 3")
-        rel.latitude = bonus_gps[2].latitude - robot_gps.latitude
-        rel.longitude = bonus_gps[2].longitude - robot_gps.longitude
+        rel.latitude = bonus_gps[2].latitude - kf_pos.latitude
+        rel.longitude = bonus_gps[2].longitude - kf_pos.longitude
         loc_pub.publish(rel)
         pub_dist_to_next_pt(bonus_gps[2])
     # final goal waypoint 
     else:
         #print("going for final goal")
-        rel.latitude = goal_gps.latitude - robot_gps.latitude
-        rel.longitude = goal_gps.longitude - robot_gps.longitude
+        rel.latitude = goal_gps.latitude - kf_pos.latitude
+        rel.longitude = goal_gps.longitude - kf_pos.longitude
         loc_pub.publish(rel)
         pub_dist_to_next_pt(goal_gps)
 
 def pub_dist_to_next_pt(point_gps):
     dist = Float32()
     # convert dist from GPS to meters
-    lat_diff = (point_gps.latitude - robot_gps.latitude) * lat_to_m
-    lon_diff = (point_gps.longitude - robot_gps.longitude) * lon_to_m
+    lat_diff = (point_gps.latitude - kf_pos.latitude)
+    lon_diff = (point_gps.longitude - kf_pos.longitude)
     dist.data = sqrt(lat_diff**2 + lon_diff**2)
     #print("dist to target:", dist.data)
     dist_pub.publish(dist)
@@ -125,6 +137,12 @@ def update_heading(imu_data):
     current_heading.data = -yaw_rads
     hdg_pub.publish(current_heading)
 
+def get_kf_state(state_msg):
+    global State, kf_pos
+    State = state_msg.data
+    kf_pos.longitude = State[0]
+    kf_pos.latitude = State[1]
+
 def main():
     global loc_pub, hdg_pub, dist_pub
 
@@ -141,6 +159,8 @@ def main():
     # subscribe to robot's current GPS position and IMU data
     rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
     rospy.Subscriber("/sim/imu", Imu, update_heading, queue_size=1)
+    # subscribe to KF State
+    rospy.Subscriber("/kf/state", Float32MultiArray, get_kf_state, queue_size=1)
 
     # Wait for Waypoints service and then request waypoints
     rospy.wait_for_service('/sim/waypoints')
