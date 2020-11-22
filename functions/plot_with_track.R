@@ -15,7 +15,7 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
   # read in the data from the file
   filepath = paste("./data/", filename, ".csv", sep="")
   df=read.csv(filepath)
-  names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x_state","y_state","xdot_state","ydot_state","theta_state","yaw_rate_state","x_true","y_true","vel_true")
+  names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","theta_meas","yaw_rate_meas","x_pred","y_pred","xdot_pred","ydot_pred","theta_pred","yaw_rate_pred","x_state","y_state","xdot_state","ydot_state","theta_state","yaw_rate_state","x_true","y_true","xdot_true","ydot_true","vel_true")
   # add a timestep independent variable
   t = c(1:length(df$x_meas))
   df <- cbind(t, df)
@@ -24,8 +24,8 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
   # subset each variable
   df_x = melt(df[,c(1,2,8,14,20)], id=c("t"))
   df_y = melt(df[,c(1,3,9,15,21)], id=c("t"))
-  df_xdot = melt(df[,c(1,4,10,16)], id=c("t"))
-  df_ydot = melt(df[,c(1,5,11,17)], id=c("t"))
+  df_xdot = melt(df[,c(1,4,10,16,22)], id=c("t"))
+  df_ydot = melt(df[,c(1,5,11,17),23], id=c("t"))
   df_theta = melt(df[,c(1,6,12,18)], id=c("t"))
   df_yr = melt(df[,c(1,7,13,19)], id=c("t"))
   
@@ -34,33 +34,39 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("X Position") + 
     cowplot::theme_minimal_grid(12) +
-    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
+    theme(plot.title = element_text(size=12))
   # save the legend before suppressing it
   legend <- cowplot::get_legend(p_x)
-  p_x <- p_x + theme(legend.position="none")
+  p_x <- p_x + theme(legend.position="none") + ylab("") + xlab("timestep")
   
   # define all the other plots (w/o legend)
   p_y <- ggplot(df_y) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green","black")) +
-    ggtitle("Y Position") + 
+    ggtitle("Y Position") + ylab("") + xlab("timestep") +
     cowplot::theme_minimal_grid(12) + theme(legend.position="none") +
-    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
+    theme(plot.title = element_text(size=12))
   p_xdot <- ggplot(df_xdot) + geom_line(aes(x=t,y=value,colour=variable)) +
-    scale_colour_manual(values=c("red","blue","green")) +
+    scale_colour_manual(values=c("red","blue","green","black")) + ylab("") + xlab("timestep") +
     ggtitle("X Velocity") + theme_minimal_grid(12) + theme(legend.position="none") +
-    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
+    theme(plot.title = element_text(size=12))
   p_ydot <- ggplot(df_ydot) + geom_line(aes(x=t,y=value,colour=variable)) +
-    scale_colour_manual(values=c("red","blue","green")) +
+    scale_colour_manual(values=c("red","blue","green","black")) + ylab("") + xlab("timestep") +
     ggtitle("Y Velocity") + theme_minimal_grid(12) + theme(legend.position="none") +
-    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
+    theme(plot.title = element_text(size=12))
   p_theta <- ggplot(df_theta) + geom_line(aes(x=t,y=value,colour=variable)) +
-    scale_colour_manual(values=c("red","blue","green")) +
+    scale_colour_manual(values=c("red","blue","green")) + ylab("") + xlab("timestep") +
     ggtitle("Heading") + theme_minimal_grid(12) + theme(legend.position="none") +
-    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
+    theme(plot.title = element_text(size=10))
   p_yr <- ggplot(df_yr) + geom_line(aes(x=t,y=value,colour=variable)) +
-    scale_colour_manual(values=c("red","blue","green")) +
+    scale_colour_manual(values=c("red","blue","green")) + ylab("") + xlab("timestep") +
     ggtitle("Yaw Rate") + theme_minimal_grid(12) + theme(legend.position="none") +
-    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5))
+    theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
+    theme(plot.title = element_text(size=10))
   
   # draw the robot's path (measured and true)
   df_t = df[,c(1,2,8,14,20,3,9,15,21)]
@@ -75,6 +81,7 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
     geom_point(aes(y_meas,x_meas), color="red") +
     geom_point(aes(y_pred,x_pred),color="blue") +
     geom_point(aes(y_state,x_state),color="green") +
+    theme(plot.title = element_text(size=14)) +
     theme_minimal_grid(12) #+ theme(legend.position="none")
   p_t
   

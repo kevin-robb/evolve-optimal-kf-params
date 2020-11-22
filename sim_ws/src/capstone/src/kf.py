@@ -35,7 +35,7 @@ yaw_rate = None
 # - LIDAR '/sim/scan'
 # - Camera '/sim/image/compressed'
 # - Velocity '/sim/velocity'
-cur_vel = None
+cur_vel = [0,0,0] # [xdot, ydot, v]
 # - Bumper '/sim/bumper'
 
 
@@ -69,8 +69,8 @@ State = None
 Measurements = None
 # collection of predictions for state variables at next timestep
 Predictions = None
-# store the ground truth for position and velocity
-Truth = [0,0,0]
+# store the ground truth for position and velocity [x,y,xdot,ydot,v]
+Truth = [0,0,0,0,0]
 
 ## Uncertainties. each is a column vector with the same number of elements
 meas_uncertainty = None
@@ -94,6 +94,9 @@ def initialize():
 
     ## set system state initial guess
     State = [0,0,0,0,0,0]
+
+    # set cur_vel starting values
+    cur_vel = [0,0,0]
 
     # set measurement uncertainties and process noise that don't change as it runs
     meas_uncertainty = [5.0, 5.0, 3.0, 3.0, 1.0, 1.0]
@@ -150,12 +153,12 @@ def measure():
     ## input measured values
     # store current x,y position from GPS
     if cur_gps is not None and start_gps is not None:
-        Measurements[1] = (cur_gps.longitude - start_gps.longitude) * lon_to_m
         Measurements[0] = (cur_gps.latitude - start_gps.latitude) * lat_to_m
+        Measurements[1] = (cur_gps.longitude - start_gps.longitude) * lon_to_m
     # store x,y velocity. need to use heading to do so
     if cur_vel is not None and cur_hdg is not None:
-        Measurements[3] = cur_vel * cos(cur_hdg)
-        Measurements[2] = cur_vel * sin(cur_hdg)
+        Measurements[2] = cur_vel[2] * cos(cur_hdg) #cur_hdg[0]
+        Measurements[3] = -cur_vel[2] * sin(cur_hdg) #cur_vel[1]
     # store heading from IMU calculated in localization_node
     if cur_hdg is not None:
         Measurements[4] = cur_hdg
@@ -227,21 +230,36 @@ def get_cur_gps(gps_msg):
     if not got_first_gps:
         start_gps = gps_msg
         got_first_gps = True
+def get_component_vels(gps_msg):
+    # uses GPS message for convenience. is in m/s
+    global cur_vel
+    if cur_vel is None:
+        return
+    cur_vel[0] = gps_msg.latitude
+    cur_vel[1] = gps_msg.longitude
 def get_cur_vel(vel_msg):
     global cur_vel
-    cur_vel = vel_msg.data
+    if cur_vel is None:
+        return
+    cur_vel[2] = vel_msg.data
 def get_yaw_rate(imu_msg):
     global yaw_rate
     yaw_rate = imu_msg.angular_velocity.z
+# Get truth values for plot comparison and NN training
 def get_true_gps(gps_msg):
     global Truth
     if start_gps is None:
         return
     Truth[0] = (gps_msg.latitude - start_gps.latitude) * lat_to_m
     Truth[1] = (gps_msg.longitude - start_gps.longitude) * lon_to_m
+def get_true_component_vels(gps_msg):
+    # uses the GPS message type for convenience. is in m/s
+    global Truth
+    Truth[2] = gps_msg.latitude
+    Truth[3] = gps_msg.longitude
 def get_true_vel(vel_msg):
     global Truth
-    Truth[2] = vel_msg.data
+    Truth[4] = vel_msg.data
 
 ## Save data to a file for evaluation
 def save_to_file():
@@ -270,12 +288,14 @@ def main():
     rospy.Subscriber("/swc/current_heading", Float32, get_cur_hdg, queue_size=1)
     # subscribe to robot's current GPS position
     rospy.Subscriber("/sim/gps", Gps, get_cur_gps, queue_size=1)
-    # subscribe to the robot's current velocity
+    # subscribe to the robot's current velocity (overall and components)
+    rospy.Subscriber("/sim/linear_velocity", Gps, get_component_vels, queue_size=1)
     rospy.Subscriber("/sim/velocity", Float32, get_cur_vel, queue_size=1)
     # subscribe to the IMU to get the angular_velocity
     rospy.Subscriber("/sim/imu", Imu, get_yaw_rate, queue_size=1)
     # subscribe to the Ground Truth (for KF comparison and training)
     rospy.Subscriber("/truth/gps", Gps, get_true_gps, queue_size=1)
+    rospy.Subscriber("/truth/linear_velocity", Gps, get_true_component_vels, queue_size=1)
     rospy.Subscriber("/truth/velocity", Float32, get_true_vel, queue_size=1)
 
     # publish the KF state for the localization to use
