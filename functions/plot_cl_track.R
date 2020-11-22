@@ -10,7 +10,6 @@ if (length(args)==0) {
   stop("Must supply filename in format 'kf_o0_n2_2020-11-15-23-19-13'", call.=FALSE)
 } else if (length(args)==1) {
   # when called from the command line, by default write to PNG
-  #args[2] = "out.txt"
   args[2] = "true"
 }
 

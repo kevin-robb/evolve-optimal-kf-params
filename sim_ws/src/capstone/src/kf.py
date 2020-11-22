@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import Float32, Float32MultiArray
+from std_msgs.msg import Float32, Float32MultiArray, String
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
@@ -83,8 +83,8 @@ state_pub = None
 # store data to be written to file
 data_for_file = []
 filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
-dt = None
 filename = None
+filename_pub = None
 
 ## Kalman Filter functions
 def initialize():
@@ -139,7 +139,7 @@ def predict():
             # constant velocity model, so do nothing
             pass
 
-    print_state()
+    #print_state()
 
 def measure():
     global meas_uncertainty, Measurements
@@ -167,7 +167,7 @@ def measure():
         Measurements[5] = yaw_rate
 
     #print("Measurements:", Measurements)
-    print_innovation()
+    #print_innovation()
 
 def update():
     global kalman_gain, State, est_uncertainty
@@ -269,19 +269,33 @@ def save_to_file():
     data_for_file.append(Measurements + Predictions + State + Truth)
     np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
-def main():
-    global state_pub, data_for_file, dt, filename
-    # initalize the node in ROS
-    rospy.init_node('kf_node')
-    data_for_file = []
+def set_filename():
+    global filename
     # use datetime to ensure unique filenames
     dt = datetime.now()
-    # filename will specify:
+    # filename will specify: (MANUALLY CHANGE THESE WHEN CHANGING SIM SETTINGS)
     #  obstacles (0,1=normal,2=hard)
     obstacles = 0
     #  noise (0,1=reduced,2=realistic)
     noise = 2
     filename = "kf_o" + str(obstacles) + "_n" + str(noise) + "_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
+    print("filename is " + filename)
+    # publish the filename so our waypoints can be written to a file and referenced if needed
+    # fname_msg = String()
+    # fname_msg.data = filename
+    # cur_time = time.time()
+    # while(time.time() - cur_time < 3):
+    #     filename_pub.publish(fname_msg)
+    # print("sent the filename!")
+
+def main():
+    global state_pub, data_for_file, filename_pub
+    # initalize the node in ROS
+    rospy.init_node('kf_node')
+    data_for_file = []
+    # create the filename
+    #filename_pub = rospy.Publisher("/kf/filename", String, queue_size=1)
+    set_filename()
 
     ## Subscribe to Sensor Values
     # robot's current heading is already published by localization_node from IMU

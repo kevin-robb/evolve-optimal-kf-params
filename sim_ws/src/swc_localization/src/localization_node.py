@@ -3,10 +3,13 @@
 import rospy
 from math import pi, sqrt
 from tf import transformations
-from std_msgs.msg import Float32, Float32MultiArray
+from std_msgs.msg import Float32, Float32MultiArray, String
 from sensor_msgs.msg import Imu
 from swc_msgs.msg import Gps
 from swc_msgs.srv import Waypoints
+import numpy as np
+from getpass import getuser
+import time
 
 # publishers
 loc_pub = None
@@ -19,6 +22,7 @@ start_gps = Gps()
 bonus_gps = []
 goal_gps = Gps()
 wp_interpreted = False
+filename = None
 # keep track of which waypoints have been visited
 visited = [False, False, False]
 lat_to_m = 110949.14
@@ -45,6 +49,11 @@ def interpret_waypoints(waypoints):
     visited = [False, False, False]
     wp_interpreted = True
     print("waypoints interpreted")
+    # # wait until the filename is received to attempt writing to a file
+    # cur_time = time.time()
+    # while(time.time() - cur_time < 1):
+    #     pass
+    # save_wpts_to_file()
 
 def make_rel_gps(global_gps):
     # transform a GPS waypoint from global GPS to meters relative to start
@@ -143,6 +152,20 @@ def get_kf_state(state_msg):
     kf_pos.longitude = State[0]
     kf_pos.latitude = State[1]
 
+# def save_wpts_to_file():
+#     print("save_wpts_to_file was called!")
+#     # is called when waypoints have been processed
+#     data_for_file = [[bonus_gps[i].latitude, bonus_gps[i].longitude] for i in range(len(bonus_gps))]
+#     data_for_file.append([goal_gps.latitide, goal_gps.longitude])
+#     filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
+#     np.savetxt(filepath + "wp_" + filename + ".csv", data_for_file, delimiter=",")
+#     print("saved waypoints to a file!")
+
+# def get_filename(str_msg):
+#     global filename
+#     filename = str_msg.data
+#     print("received the filename!")
+
 def main():
     global loc_pub, hdg_pub, dist_pub
 
@@ -161,6 +184,8 @@ def main():
     rospy.Subscriber("/sim/imu", Imu, update_heading, queue_size=1)
     # subscribe to KF State
     rospy.Subscriber("/kf/state", Float32MultiArray, get_kf_state, queue_size=1)
+    # subscribe to KF data filename so we can write the waypoints to a file of the same name
+    #rospy.Subscriber("/kf/filename", String, get_filename, queue_size=1)
 
     # Wait for Waypoints service and then request waypoints
     rospy.wait_for_service('/sim/waypoints')

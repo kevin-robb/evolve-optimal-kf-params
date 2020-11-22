@@ -25,7 +25,7 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
   df_x = melt(df[,c(1,2,8,14,20)], id=c("t"))
   df_y = melt(df[,c(1,3,9,15,21)], id=c("t"))
   df_xdot = melt(df[,c(1,4,10,16,22)], id=c("t"))
-  df_ydot = melt(df[,c(1,5,11,17),23], id=c("t"))
+  df_ydot = melt(df[,c(1,5,11,17,23)], id=c("t"))
   df_theta = melt(df[,c(1,6,12,18)], id=c("t"))
   df_yr = melt(df[,c(1,7,13,19)], id=c("t"))
   
