@@ -66,12 +66,6 @@ initialized = False
 # store the ground truth for position and velocity [x,y,xdot,ydot,v]
 Truth = [0,0,0,0,0]
 
-## Uncertainties. each is a column vector with the same number of elements
-meas_uncertainty = None
-est_uncertainty = None
-kalman_gain = None
-process_noise = None
-
 ## Publishers
 state_pub = None
 # store data to be written to file
