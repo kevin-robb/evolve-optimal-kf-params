@@ -684,10 +684,10 @@ where
 
 ## State
 
-We are using a 4D system state: the X and Y positions and velocities.
-I will denote the state in my code with $S$, so I will use it here as well for consistency.
+We are using a 4D system state: the x and x positions and velocities.
+I will denote the state in my code with $X$, so I will use it here as well for consistency.
 $$
-S = \hat{x}_n = \begin{pmatrix} x&y&\dot{x}&\dot{y} \end{pmatrix} ^T
+X = \hat{x}_n = \begin{pmatrix} x&y&\dot{x}&\dot{y} \end{pmatrix} ^T
 $$
 ## State Transition Matrix, F
 
@@ -762,7 +762,7 @@ v \cdot \cos{\phi} \\ -v \cdot \sin{\phi}
 \end{bmatrix}
 $$
 
-It is then simple to see (using $Z = \boldsymbol{H} \cdot S + \boldsymbol{v} $) that in this frame of reference, the observation matrix, $\boldsymbol{H}$, is simply
+It is then simple to see (using $Z = \boldsymbol{H} \cdot X + \boldsymbol{v} $) that in this frame of reference, the observation matrix, $\boldsymbol{H}$, is simply
 $$
 \boldsymbol{H} = 
 \begin{pmatrix} 
@@ -778,7 +778,7 @@ $$
 This gives us
 $$
 \begin{aligned}
-Z &= \boldsymbol{H} \cdot S + \boldsymbol{v} \\
+Z &= \boldsymbol{H} \cdot X + \boldsymbol{v} \\
 \begin{bmatrix} \lambda \\ \Lambda \\ v_x \\ v_y \end{bmatrix} &=
 \begin{pmatrix} 
 1 & 0 & 0 & 0 \\
@@ -795,16 +795,42 @@ Each measurement cycle, we receive the sensor data, perform the transformations 
 
 ## Covariance Matrix, P
 
+If we claim to know the exact positions and velocities, we would use a covariance matrix $\boldsymbol{P} = \begin{pmatrix} 0&0&0&0\\0&0&0&0\\0&0&0&0\\0&0&0&0\end{pmatrix}$. We do not, however, know the precise true values. Our measurements have a noise to them, so we will represent this by choosing suitable variances for our initial definition of $\boldsymbol{P}$.
+$$
+\boldsymbol{P} = \begin{pmatrix} 
+\sigma_x^2&0&0&0\\
+0&\sigma_y^2&0&0\\
+0&0&\sigma_{v_x}^2&0\\
+0&0&0&\sigma_{v_y}^2
+\end{pmatrix}
+$$
+We also don't know the true variances of our sensors, but we can fill them in with good guesses. Putting values here will cause the filter to prioritize measurements at first until it can tune $\boldsymbol{P}$ to the most appropriate values.
 
-## Kalman Gain, K
-
+Let's say that GPS measurements are accurate to about 5 meters, so we will set $\sigma_x^2 = \sigma_y^2 = 25$. Our velocity measurement is probably accurate within a couple meters per second, and the heading is probably accurate to within 10 degrees on either side. This means $2 \cdot \cos(10^\circ) \approx 0.2$ and $2 \cdot \sin(10^\circ) \approx 0.4$. Let's set $\sigma_{v_x}^2 = 0.25$ and $\sigma_{v_x}^2 = 0.5$ just to play it safe. This gives us a covariance matrix of 
+$$
+\boldsymbol{P} = \begin{pmatrix} 
+25 &0&0&0\\
+0& 25 &0&0\\
+0&0& 1/4 &0\\
+0&0&0& 1/2
+\end{pmatrix}
+$$
 
 ## Process Noise Uncertainty, Q
 
+We will try to tune this later using the Neural Network, so don't worry too much about it for now. We know that it is a 4x4 matrix with entries each proportional to some power of $\Delta t$, and the overall matrix is proportional to $\sigma_a^2$. 
+
+The diagonal of $\boldsymbol{Q}$ contains the variance of each state variable, and the off-diagonal elements contain the covariances between the different state variables
+
+We will start out using the 4D identity matrix, and use a more complicated and accurate model later.
 
 ## Measurement Uncertainty, R
 
+R can be found by processing measurements while holding the system and output constant, and subtracting out the mean. This will leave only the noise remaining in the data.
 
+Similarly to $\boldsymbol{Q}$, we will just be using the 4D identity matrix for now.
+
+## Kalman Gain, K
 
 
 

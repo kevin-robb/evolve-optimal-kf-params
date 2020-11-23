@@ -40,30 +40,37 @@ cur_vel = [0,0,0] # [xdot, ydot, v]
 
 
 ## Kalman Filter variables
-# State, S, is just x, y, xdot, ydot
-S = np.transpose(np.array([0,0,0,0])) #column vector
-# State transition matrix, F
+# State is just x, y, xdot, ydot (initial) (4D column vector)
+X = np.transpose(np.array([0,0,0,0]))
+# State transition matrix (static) (4x4)
 F = np.array([1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1])
 F_trans = np.transpose(F)
-# Estimate uncertainty (covariance) matrix, P
-#P = np.array(#TODO)
-# Process noise, Q
-#Q = np.array(#TODO)
-# Measurements, Z
-Z = np.array([0],[0]) #TODO
+# Covariance Matrix (initial) (4x4)
+P = np.array([25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2])
+# Measurements (initial) (4D column vector)
+Z = np.transpose(np.array([0,0,0,0]))
+# Observation Matrix (static) (4x4)
+H = np.array([1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1])
+# Process noise, Q #TODO (4x4)
+Q = np.array([1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1])
+# Measurement Uncertainty, R #TODO (4x4?)
+R = np.array([1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1])
 
 ## KF equations in matrix form
-# state extrapolation: S(n+1) = F*S(n) + w (process noise?)
+# state extrapolation: X(n+1) = F*X(n) + w (process noise?)
 # covariance extrapolation: P(n+1) = F*P(n)*F^T + Q
-# state update: S(n+1) = S(n) + K(n)*(Z(n)-H*S(n))
+# state update: X(n+1) = X(n) + K(n)*(Z(n)-H*X(n))
 # covariance update: P = (I-K*H)*P*(I-K*H)^T + K*R*K^T
 # kalman gain: K = P*H^T*(H*P*H^T+R)^{-1}
+## or use the optimal kalman gain:
+# innovation S = H*P*H^T + R
+# optimal kalman gain K = P*H^T*S
+# est cov P = (I-K*H)*P
 ## other equations
-# measurement: Z = H*S + v(n) (random noise vector)
-H = np.array([1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1])
+# measurement: Z = H*X + v(n) (random noise vector)
 # meas uncertainty: R = E(v*v^T)
 # process noise uncertainty: Q = E(w*w^T)
-# est uncertainty: P = E((X-S)*(X-S)^T)
+# est uncertainty: P = E((x-X)*(x-X)^T)
 
 # init flag
 initialized = False
