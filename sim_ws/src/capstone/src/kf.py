@@ -214,7 +214,7 @@ def save_to_file():
     global data_for_file
     if filename is None:
         return
-    data_for_file.append(mat_to_ls(Z) + mat_to_ls(X_next) + mat_to_ls(X) + Truth)
+    data_for_file.append(mat_to_ls(Z) + mat_to_ls(X_next) + mat_to_ls(X) + Truth + [cur_hdg])
     np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
 def set_filename():
