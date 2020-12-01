@@ -72,7 +72,7 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
     geom_point(aes(y_pred,x_pred),color="blue") +
     geom_point(aes(y_state,x_state),color="green") +
     theme(plot.title = element_text(size=14)) +
-    coord_cartesian(xlim = c(-20, 20), ylim = c(0, 100)) +
+    coord_cartesian(xlim = c(25, -25), ylim = c(0, 90)) +
     theme_minimal_grid(12) #+ theme(legend.position="none")
   p_t
   
