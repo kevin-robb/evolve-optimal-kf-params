@@ -46,17 +46,20 @@ X_next = np.transpose(np.matrix([0,0,0,0])) # prediction for next
 F = np.matrix([[1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1]])
 F_trans = np.transpose(F)
 # Covariance Matrix (initial) (4x4)
-P = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
-P_next = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
+#P = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
+#P_next = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
+# artificially make it smaller for now to try and fix exponential growth
+P = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
+P_next = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
 # Measurements (initial) (4D column vector)
 Z = np.transpose(np.matrix([0,0,0,0]))
 # Observation Matrix (static) (4x4)
 H = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 H_trans = np.transpose(H)
 # Process noise, Q #TODO (4x4)
-Q = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+Q = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
 # Measurement Uncertainty, R #TODO (4x4?)
-R = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+R = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
 # Identity matrix in 4D
 I = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
@@ -96,7 +99,7 @@ def predict():
 
     ## extrapolate the estimate uncertainty
     # covariance extrapolation: P(n+1) = F*P(n)*F^T + Q
-    P_next = np.matmul(np.matmul(F,P),F_trans) #+ Q
+    P_next = np.matmul(np.matmul(F,P),F_trans) + Q
 
 def measure():
     global Z
@@ -118,7 +121,7 @@ def update():
     # innovation S = H*P*H^T + R
     # optimal kalman gain K = P*H^T*S
     #S = np.matmul(np.matmul(H,P),H_trans) #+ R
-    S = P # since H is the identity and we neglect R for now
+    S = P + R# since H is the identity and we neglect R for now
     #K = np.matmul(np.matmul(P,H_trans),S)
     K = np.matmul(P,S) # since H is the identity
     # (P is diagonal, so it is not invertible)
