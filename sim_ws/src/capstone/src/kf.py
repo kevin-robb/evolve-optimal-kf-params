@@ -117,8 +117,11 @@ def update():
     ## calculate kalman gain
     # innovation S = H*P*H^T + R
     # optimal kalman gain K = P*H^T*S
-    S = np.matmul(np.matmul(H,P),H_trans) #+ R
-    K = np.matmul(np.matmul(P,H_trans),S)
+    #S = np.matmul(np.matmul(H,P),H_trans) #+ R
+    S = P # since H is the identity and we neglect R for now
+    #K = np.matmul(np.matmul(P,H_trans),S)
+    K = np.matmul(P,S) # since H is the identity
+    # (P is diagonal, so it is not invertible)
 
     ## estimate the current state using the state update equation
     # state update: X(n+1) = X(n) + K*(Z-H*X(n))
@@ -127,7 +130,8 @@ def update():
     ## update the current estimate uncertainty
     # covariance update: P = (I-K*H)*P*(I-K*H)^T + K*R*K^T
     # or P = (I-K*H)*P (simple version)
-    P = np.matmul((I-np.matmul(K,H)),P_next)
+    #P = np.matmul((I-np.matmul(K,H)),P_next)
+    P = np.matmul(I-K,P_next) # since H is the identity
 
 ## Run the KF
 def timer_callback(event):
@@ -135,10 +139,14 @@ def timer_callback(event):
         initialize()
     else:
         predict()
-        print_state()
+        print_state("Prediction", X_next)
         measure()
+        print_state("Measurement", Z)
         #print_innovation()
         update()
+        print(K)
+        print_state("State", X)
+        print(P)
         ## publish the state for the robot to use
         state_msg = Float32MultiArray()
         state_msg.data = X.tolist()
@@ -146,11 +154,11 @@ def timer_callback(event):
         # write data for analysis
         save_to_file()
 
-## print State to the console in a readable format
-def print_state():
-    state = mat_to_ls(X)
-    print(state)
-    line = "State: x=" + "{:.2f}".format(state[0]) + ", y=" + "{:.2f}".format(state[1]) \
+## print state vector to the console in a readable format
+def print_state(name, vector):
+    state = mat_to_ls(vector)
+    #print(state)
+    line = name + ": x=" + "{:.2f}".format(state[0]) + ", y=" + "{:.2f}".format(state[1]) \
         + ", x-vel=" + "{:.2f}".format(state[2]) + ", y-vel=" + "{:.2f}".format(state[3])
     print(line)
 ## print innovation to the console in a readable format
