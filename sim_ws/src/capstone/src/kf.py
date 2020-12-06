@@ -38,45 +38,36 @@ yaw_rate = None
 cur_vel = [0,0,0] # [xdot, ydot, v]
 # - Bumper '/sim/bumper'
 
-
 ## Kalman Filter variables
-# State, S, is just x, y, xdot, ydot
-#S = np.array([0],[0],[0],[0]) #column vector
-# State transition matrix, F
-#F = np.array([1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1])
-#F_trans = np.transpose(F)
-# used for state extrapolation eqn: S(n+1) = F*S(n)
-# and covariance extrapolation eqn: P(n+1) = F*P(n)*F^T
-# Estimate uncertainty (covariance) matrix, P
-#P = np.array(#TODO)
-# Process noise, Q
-#Q = np.array(#TODO)
-
+# State is just x, y, xdot, ydot (initial) (4D column vector)
+X = np.transpose(np.matrix([0,0,0,0])) # current
+X_next = np.transpose(np.matrix([0,0,0,0])) # prediction for next
+# State transition matrix (static) (4x4)
+F = np.matrix([[1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1]])
+F_trans = np.transpose(F)
+# Covariance Matrix (initial) (4x4)
+#P = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
+#P_next = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
+# artificially make it smaller for now to try and fix exponential growth
+P = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
+P_next = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
+# Measurements (initial) (4D column vector)
+Z = np.transpose(np.matrix([0,0,0,0]))
+# Observation Matrix (static) (4x4)
+H = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+H_trans = np.transpose(H)
+# Process noise, Q #TODO (4x4)
+Q = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
+# Measurement Uncertainty, R #TODO (4x4?)
+R = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
+# Identity matrix in 4D
+I = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
 # init flag
 initialized = False
 
-# collection of state variables' current estimation
-# format: 
-#   State[0] = current x-position in meters relative to start (forward = +x-axis)
-#   State[1] = current y-position in meters relative to start (TODO left = +y-axis??)
-#   State[2] = current x-velocity in m/s
-#   State[3] = current y-velocity in m/s
-#   State[4] = current heading in radians (0=north, increasing CW)
-#   State[5] = current yaw rate (angular velocity about z-axis) of robot in rad/s
-State = None
-# collection of measurement values/calculations of state variables
-Measurements = None
-# collection of predictions for state variables at next timestep
-Predictions = None
 # store the ground truth for position and velocity [x,y,xdot,ydot,v]
 Truth = [0,0,0,0,0]
-
-## Uncertainties. each is a column vector with the same number of elements
-meas_uncertainty = None
-est_uncertainty = None
-kalman_gain = None
-process_noise = None
 
 ## Publishers
 state_pub = None
@@ -88,113 +79,62 @@ filename_pub = None
 
 ## Kalman Filter functions
 def initialize():
-    global initialized, est_uncertainty, meas_uncertainty, State, process_noise
+    global initialized
     ## set estimate uncertainty initial guess
-    est_uncertainty = [5.0,5.0,5.0,5.0,5.0,5.0]
+    # already done above
 
     ## set system state initial guess
-    State = [0,0,0,0,0,0]
+    # already done above
 
-    # set cur_vel starting values
-    cur_vel = [0,0,0]
-
-    # set measurement uncertainties and process noise that don't change as it runs
-    meas_uncertainty = [5.0, 5.0, 3.0, 3.0, 1.0, 1.0]
-    process_noise = [10.0, 10.0, 15.0, 15.0, 10.0, 15.0]
-
-    if cur_gps is not None and start_gps is not None and cur_hdg is not None and cur_vel is not None and yaw_rate is not None:
+    if filename is not None and cur_gps is not None and start_gps is not None and cur_hdg is not None:
         ## set initialized flag
         initialized = True
         print("initialized KF")
 
-
 def predict():
-    global Predictions, est_uncertainty
-    if Predictions is None:
-        Predictions = [0,0,0,0,0,0]
-    if State is None:
-        return
+    global X_next, P_next
     ## calculate predicted state for next iteration using dynamic model
-    # x <- x + x' * delT
-    Predictions[0] = State[0] + State[2] * timer_period
-    # y <- y + y' * delT
-    Predictions[1] = State[1] + State[3] * timer_period
-    # assume constant velocity for simplicity (for now)
-    Predictions[2] = State[2]
-    Predictions[3] = State[3]
-    # theta <- theta + theta' * delT
-    Predictions[4] = State[4] + State[5] * timer_period
-    # assume constant yaw_rate for simplicity (for now)
-    Predictions[5] = State[5]
+    # state extrapolation: X(n+1) = F*X(n) + w (process noise?)
+    X_next = np.matmul(F,X)
 
     ## extrapolate the estimate uncertainty
-    # assume constant for velocities and follow dynamic model for positions
-    for i in range(len(est_uncertainty)):
-        if i == 0 or i == 1 or i == 4:
-            # x, y, or yaw.
-            # update using dynamic model and velocity est uncertainties
-            est_uncertainty[i] += timer_period**2 * est_uncertainty[i+1]
-        else: #i == 2 or i == 3 or i == 5:
-            # x-vel, y-vel, or yaw rate. 
-            # constant velocity model, so do nothing
-            pass
-
-    #print_state()
+    # covariance extrapolation: P(n+1) = F*P(n)*F^T + Q
+    P_next = np.matmul(np.matmul(F,P),F_trans) + Q
 
 def measure():
-    global meas_uncertainty, Measurements
+    global Z
     ## input measurement uncertainty
-    # TODO for now assume meas_uncertainty is constant
-    # TODO increase uncertainty as velocity changes, obstacles are 
-    #   near, or yaw rate is high.
-
-    if Measurements is None:
-        Measurements = [0,0,0,0,0,0]
+    # assuming constant for now, but #TODO update R
+    if cur_gps is None or start_gps is None or cur_hdg is None:
+        return
+    
     ## input measured values
-    # store current x,y position from GPS
-    if cur_gps is not None and start_gps is not None:
-        Measurements[0] = (cur_gps.latitude - start_gps.latitude) * lat_to_m
-        Measurements[1] = (cur_gps.longitude - start_gps.longitude) * lon_to_m
-    # store x,y velocity. need to use heading to do so
-    if cur_vel is not None and cur_hdg is not None:
-        Measurements[2] = cur_vel[2] * cos(cur_hdg) #cur_hdg[0]
-        Measurements[3] = -cur_vel[2] * sin(cur_hdg) #cur_vel[1]
-    # store heading from IMU calculated in localization_node
-    if cur_hdg is not None:
-        Measurements[4] = cur_hdg
-    # store yaw rate from IMU
-    if yaw_rate is not None:
-        Measurements[5] = yaw_rate
-
-    #print("Measurements:", Measurements)
-    #print_innovation()
+    Z = np.transpose(np.matrix([
+        (cur_gps.latitude - start_gps.latitude) * lat_to_m,
+        (cur_gps.longitude - start_gps.longitude) * lon_to_m,
+        cur_vel[2] * cos(cur_hdg),
+        -cur_vel[2] * sin(cur_hdg)]))
 
 def update():
-    global kalman_gain, State, est_uncertainty
-
+    global K, X, P
     ## calculate kalman gain
-    if kalman_gain is None:
-        kalman_gain = [0,0,0,0,0,0]
-    for i in range(len(kalman_gain)):
-        kalman_gain[i] = est_uncertainty[i] / (est_uncertainty[i] + meas_uncertainty[i])
+    # innovation S = H*P*H^T + R
+    # optimal kalman gain K = P*H^T*S
+    #S = np.matmul(np.matmul(H,P),H_trans) #+ R
+    S = P + R# since H is the identity and we neglect R for now
+    #K = np.matmul(np.matmul(P,H_trans),S)
+    K = np.matmul(P,S) # since H is the identity
+    # (P is diagonal, so it is not invertible)
 
     ## estimate the current state using the state update equation
-    # make sure everything has been set
-    if Measurements is None or Predictions is None:
-        return
-    if State is None:
-        State = [0,0,0,0,0,0]
-    for i in range(len(State)):
-        State[i] = kalman_gain[i] * Measurements[i] + (1-kalman_gain[i]) * Predictions[i]
+    # state update: X(n+1) = X(n) + K*(Z-H*X(n))
+    X = X_next + np.matmul(K,(Z-np.matmul(H,X_next)))
     
     ## update the current estimate uncertainty
-    for i in range(len(est_uncertainty)):
-        est_uncertainty[i] *= (1-kalman_gain[i])
-    
-    ## publish the state for the robot to use
-    state_msg = Float32MultiArray()
-    state_msg.data = State
-    state_pub.publish(state_msg)
+    # covariance update: P = (I-K*H)*P*(I-K*H)^T + K*R*K^T
+    # or P = (I-K*H)*P (simple version)
+    #P = np.matmul((I-np.matmul(K,H)),P_next)
+    P = np.matmul(I-K,P_next) # since H is the identity
 
 ## Run the KF
 def timer_callback(event):
@@ -202,21 +142,35 @@ def timer_callback(event):
         initialize()
     else:
         predict()
+        print_state("Prediction", X_next)
         measure()
+        print_state("Measurement", Z)
+        #print_innovation()
         update()
+        print(K)
+        print_state("State", X)
+        print(P)
+        ## publish the state for the robot to use
+        state_msg = Float32MultiArray()
+        state_msg.data = X.tolist()
+        state_pub.publish(state_msg)
+        # write data for analysis
         save_to_file()
 
-## print State to the console in a readable format
-def print_state():
-    line = "State: x=" + "{:.2f}".format(State[0]) + ", y=" + "{:.2f}".format(State[1]) \
-        + ", x-vel=" + "{:.2f}".format(State[2]) + ", y-vel=" + "{:.2f}".format(State[3]) \
-        + ", hdg=" + "{:.2f}".format(degrees(State[4])) + ", yaw-rate=" + "{:.2f}".format(degrees(State[5]))
+## print state vector to the console in a readable format
+def print_state(name, vector):
+    state = mat_to_ls(vector)
+    #print(state)
+    line = name + ": x=" + "{:.2f}".format(state[0]) + ", y=" + "{:.2f}".format(state[1]) \
+        + ", x-vel=" + "{:.2f}".format(state[2]) + ", y-vel=" + "{:.2f}".format(state[3])
     print(line)
 ## print innovation to the console in a readable format
 def print_innovation():
-    line = "Innovation: x=" + "{:.2f}".format(State[0]-Measurements[0]) + ", y=" + "{:.2f}".format(State[1]-Measurements[1]) \
-        + ", x-vel=" + "{:.2f}".format(State[2]-Measurements[2]) + ", y-vel=" + "{:.2f}".format(State[3]-Measurements[3]) \
-        + ", hdg=" + "{:.2f}".format(degrees(State[4]-Measurements[4])) + ", yaw-rate=" + "{:.2f}".format(degrees(State[5]-Measurements[5]))
+    Inn = mat_to_ls((Z-np.matmul(H,X_next)))
+    line = "Innovation: x=" + "{:.2f}".format(Inn[0]) \
+        + ", y=" + "{:.2f}".format(Inn[1]) \
+        + ", xdot=" + "{:.2f}".format(Inn[2]) \
+        + ", ydot=" + "{:.2f}".format(Inn[3])
     print(line)
 
 ## Functions to receive sensor readings. 
@@ -261,12 +215,17 @@ def get_true_vel(vel_msg):
     global Truth
     Truth[4] = vel_msg.data
 
+# func to make recording column vector values easier
+def mat_to_ls(mat):
+    # mat is a numpy matrix with 1 column
+    return np.transpose(mat).tolist()[0]
+
 ## Save data to a file for evaluation
 def save_to_file():
     global data_for_file
     if filename is None:
         return
-    data_for_file.append(Measurements + Predictions + State + Truth)
+    data_for_file.append(mat_to_ls(Z) + mat_to_ls(X_next) + mat_to_ls(X) + Truth + [cur_hdg])
     np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
 def set_filename():
