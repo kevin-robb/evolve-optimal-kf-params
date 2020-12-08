@@ -17,7 +17,7 @@ This file is for making plots to demonstrate points I make in talks and the desi
 
 ```{r}
 size = 40
-noise = runif(size, min=-5, max=5)
+noise = runif(size, min=-8, max=8)
 x = c(1:size)
 plot(x,noise)
 ```
@@ -56,50 +56,40 @@ library(cowplot)
 
 # use the data from above to make a dataframe
 df <- data.frame(x,y_true,y_meas,y_state_highQ,y_state_goodQ,y_state_lowQ)
-names(df) <- c("Time","Truth","Measurement","State (High Q)","State","State (Low Q)")
-
-
-# subset to make legend
-df_leg <- df[,c(1,2,3,5)]
-names(df_leg) <- c("Time","Truth","Measurement","State")
+names(df) <- c("Time","Truth","Measurement","State_high","State","State_low")
 
 # subset each variable
 df_high = melt(df[,c(1,2,3,4)], id=c("Time"))
 df_good = melt(df[,c(1,2,3,5)], id=c("Time"))
 df_low = melt(df[,c(1,2,3,6)], id=c("Time"))
 
-
-# make plot to get the legend
-# p_leg <- ggplot(df_leg) + geom_line(aes(x=Time,y=Truth,col="black")) +
-#   geom_point(aes(x=Time,y=Measurement,col="red")) +
-#   geom_line(aes(x=Time,y=State,col="green"))
-# legend <- cowplot::get_legend(p_leg)
-
-p_good <- ggplot(df_good) + geom_line(aes(x=Time,y=value,colour=variable)) +
+# make a plot just to get the legend
+p_leg <- ggplot(df_good) + geom_line(aes(x=Time,y=value,colour=variable)) +
   scale_colour_manual(values=c("grey43","red","limegreen")) +
   ggtitle("Appropriate Q") + 
   cowplot::theme_minimal_grid(12)
-legend <- cowplot::get_legend(p_good)
+legend <- cowplot::get_legend(p_leg)
 
 # plot the three different states
-p_high <- ggplot(df_high) + geom_line(aes(x=Time,y=value,colour=variable)) +
-  scale_colour_manual(values=c("grey43","red","limegreen")) +
+p_high <- ggplot(df) + geom_line(aes(x=Time,y=Truth),col="grey43") +
+  geom_point(aes(x=Time,y=Measurement),size=1,col="red") +
+  geom_line(aes(x=Time,y=State_high),col="limegreen") +
   ggtitle("High Q (Overfitting)") + 
   cowplot::theme_minimal_grid(12) +
-  # theme(axis.text.x = element_text(size = 8, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
-  # theme(plot.title = element_text(size=12)) +
   theme(legend.position="none") + ylab("State Variable") + xlab("Time") +
   theme(axis.text.x=element_blank(),axis.text.y=element_blank(),axis.ticks=element_blank())
 
-p_good <- ggplot(df_good) + geom_line(aes(x=Time,y=value,colour=variable)) +
-  scale_colour_manual(values=c("grey43","red","limegreen")) +
+p_good <- ggplot(df) + geom_line(aes(x=Time,y=Truth),col="grey43") +
+  geom_point(aes(x=Time,y=Measurement),size=1,col="red") +
+  geom_line(aes(x=Time,y=State),col="limegreen") +
   ggtitle("Appropriate Q (Converges on Truth)") + 
   cowplot::theme_minimal_grid(12) +
   theme(legend.position="none") + ylab("State Variable") + xlab("Time") +
   theme(axis.text.x=element_blank(),axis.text.y=element_blank(),axis.ticks=element_blank())
 
-p_low <- ggplot(df_low) + geom_line(aes(x=Time,y=value,colour=variable)) +
-  scale_colour_manual(values=c("grey43","red","limegreen")) +
+p_low <- ggplot(df) + geom_line(aes(x=Time,y=Truth),col="grey43") +
+  geom_point(aes(x=Time,y=Measurement),size=1,col="red") +
+  geom_line(aes(x=Time,y=State_low),col="limegreen") +
   ggtitle("Low Q (Lag Error)") + 
   cowplot::theme_minimal_grid(12) +
   theme(legend.position="none") + ylab("State Variable") + xlab("Time") +
