@@ -56,9 +56,9 @@ Z = np.transpose(np.matrix([0,0,0,0]))
 # Observation Matrix (static) (4x4)
 H = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 H_trans = np.transpose(H)
-# Process noise, Q #TODO (4x4)
+# Process noise, Q (4x4)
 Q = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
-# Measurement Uncertainty, R #TODO (4x4?)
+# Measurement Uncertainty, R (4x4)
 R = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
 # Identity matrix in 4D
 I = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
@@ -152,7 +152,8 @@ def timer_callback(event):
         print(P)
         ## publish the state for the robot to use
         state_msg = Float32MultiArray()
-        state_msg.data = X.tolist()
+        #state_msg.data = X.tolist()
+        state_msg.data = mat_to_ls(X)
         state_pub.publish(state_msg)
         # write data for analysis
         save_to_file()
@@ -173,7 +174,7 @@ def print_innovation():
         + ", ydot=" + "{:.2f}".format(Inn[3])
     print(line)
 
-## Functions to receive sensor readings. 
+## Functions to receive sensor readings.
 ## Stay in buffer until measure() is run each clock cycle.
 def get_cur_hdg(hdg_msg):
     global cur_hdg

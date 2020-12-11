@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 import rospy
-from math import pi, sqrt
+from math import sqrt#, pi
 from tf import transformations
-from std_msgs.msg import Float32, Float32MultiArray, String
+from std_msgs.msg import Float32, Float32MultiArray#, String
 from sensor_msgs.msg import Imu
 from swc_msgs.msg import Gps
 from swc_msgs.srv import Waypoints
-import numpy as np
-from getpass import getuser
-import time
+# import numpy as np
+# from getpass import getuser
+# import time
 
 # publishers
 loc_pub = None
