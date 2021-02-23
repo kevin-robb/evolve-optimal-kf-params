@@ -10,4 +10,6 @@
     <node pkg="swc_localization" type="localization_node.py" name="localization_node" output="screen" />
     <!-- kalman filter node -->
     <node pkg="capstone" type="kf.py" name="kf_node" output="screen" />
+    <!-- node to check for the simulator ending, and shut down ROS -->
+    <node pkg="capstone" type="check_for_shutdown.py" name="shutdown_node" output="screen" required="true" />
 </launch>
