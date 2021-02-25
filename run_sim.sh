@@ -11,10 +11,14 @@
 source sim_ws/devel/setup.bash
 roslaunch capstone kf.launch 
 
+# When the ROS code finishes and closes, process the results
+python3 functions/read_results.py
+
+# TODO launch the NN to train another round with the latest results
+
 # TODO
-# do something with results.txt, which is created in this directory.
-# -> maybe make a python file to interpret it.
-# -> maybe also read values from the .cfg files if they aren't in results.
-# call the R plotting script, and make it able to receive the seed and score as params.
+# call the R plotting script
+# -> make it able to receive the seed and score as params.
+# -> make it able to receive a cmd line param to put in the results folder rather than plots.
 # implement NN and training.
 # -> could have the NN able to modify values in the .cfg itself.
