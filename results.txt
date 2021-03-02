@@ -1,15 +1,14 @@
-Team WickedSlickRobotics
-Date: 2021-02-23 17:50:17 -06
-Seed: 76168294
+Team KevinRobbotics
+Date: 2021-03-02 16:36:28 -06
+Seed: 53496492
 
-Time: 24.680
-Multiplier: x1.539
-Score: 37.986
+Time: 30.080
+Multiplier: x3.226
+Score: 97.048
 
 -- Multipliers --
 Obstacles Bonus: x1.00
 Noise Bonus: x0.60
 Waypoint 1 reached: x0.80
 Waypoint 2 reached: x0.80
-Waypoint 3 reached: x0.80
-44% Damaged: x5.01
+82% Damaged: x8.40
