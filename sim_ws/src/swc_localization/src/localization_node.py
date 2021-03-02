@@ -3,7 +3,7 @@
 import rospy
 from math import sqrt#, pi
 from tf import transformations
-from std_msgs.msg import Float32, Float32MultiArray#, String
+from std_msgs.msg import Float32, Float32MultiArray, Bool #, String
 from sensor_msgs.msg import Imu
 from swc_msgs.msg import Gps
 from swc_msgs.srv import Waypoints
@@ -54,6 +54,11 @@ def interpret_waypoints(waypoints):
     # while(time.time() - cur_time < 1):
     #     pass
     # save_wpts_to_file()
+
+    # tell the check_for_shutdown node that we have started
+    init_msg = Bool()
+    init_msg.data = True
+    init_pub.publish(init_msg)
 
 def make_rel_gps(global_gps):
     # transform a GPS waypoint from global GPS to meters relative to start
@@ -167,7 +172,7 @@ def get_kf_state(state_msg):
 #     print("received the filename!")
 
 def main():
-    global loc_pub, hdg_pub, dist_pub
+    global loc_pub, hdg_pub, dist_pub, init_pub
 
     # Initalize our node in ROS
     rospy.init_node('localization_node')
@@ -178,6 +183,8 @@ def main():
     hdg_pub = rospy.Publisher("/swc/current_heading", Float32, queue_size=1)
     # publish distance to current target waypoint
     dist_pub = rospy.Publisher("/swc/dist", Float32, queue_size=1)
+    # publish True to tell the shutdown node that we have started
+    init_pub = rospy.Publisher("/swc/init", Bool, queue_size=1)
 
     # subscribe to robot's current GPS position and IMU data
     rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
