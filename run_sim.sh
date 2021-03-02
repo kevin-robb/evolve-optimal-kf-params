@@ -6,13 +6,10 @@
 # and that its file has been unzipped and placed in the '~/Simulators' directory.
 # You may also need to ensure the launch file is made executable.
 ./../Simulators/SCR_SWC_20_SIM_6.0_LINUX/SCRSWC20.x86_64 &
-SIM_PID=$!
 # Start my ROS code
 source sim_ws/devel/setup.bash
 roslaunch capstone kf.launch &
-#ROS_PID=$!
 # Wait for the simulator to finish, then kill ROS.
-#wait $SIM_PID
 wait %1
 #kill -9 $ROS_PID
 killall -9 roscore
@@ -21,7 +18,7 @@ killall -9 rosmaster
 # When the ROS code finishes and closes, process the results
 python3 functions/read_results.py
 
-# TODO launch the NN to train another round with the latest results
+# TODO do the EC training. maybe make as node in ROS
 
 # TODO
 # call the R plotting script
