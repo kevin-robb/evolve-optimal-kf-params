@@ -46,20 +46,17 @@ X_next = np.transpose(np.matrix([0,0,0,0])) # prediction for next
 F = np.matrix([[1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1]])
 F_trans = np.transpose(F)
 # Covariance Matrix (initial) (4x4)
-#P = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
-#P_next = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
-# artificially make it smaller for now to try and fix exponential growth
-P = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
-P_next = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
+P = None #np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
+P_next = None #np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
 # Measurements (initial) (4D column vector)
 Z = np.transpose(np.matrix([0,0,0,0]))
 # Observation Matrix (static) (4x4)
 H = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 H_trans = np.transpose(H)
 # Process noise, Q (4x4)
-Q = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
+Q = None #np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
 # Measurement Uncertainty, R (4x4)
-R = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
+R = None #np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
 # Identity matrix in 4D
 I = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
@@ -86,10 +83,26 @@ def initialize():
     ## set system state initial guess
     # already done above
 
+    # read in the genome we are using
+    read_genome()
+
     if filename is not None and cur_gps is not None and start_gps is not None and cur_hdg is not None:
         ## set initialized flag
         initialized = True
         print("initialized KF")
+
+def read_genome():
+    # read the genome from the file.
+    global P, P_next, Q, R
+    file1 = open("results.txt", "r+")
+    line = file1.readlines()[0]
+    g = [float(g) for g in line.split(",")]
+
+    # set everything that depends on the genome.
+    P = np.matrix([[g[0],0,0,0],[0,g[1],0,0],[0,0,g[2],0],[0,0,0,g[3]]])
+    P_next = P
+    Q = np.matrix([[g[4],0,0,0],[0,g[5],0,0],[0,0,g[6],0],[0,0,0,g[7]]])
+    R = np.matrix([[g[8],0,0,0],[0,g[9],0,0],[0,0,g[10],0],[0,0,0,g[11]]])
 
 def predict():
     global X_next, P_next

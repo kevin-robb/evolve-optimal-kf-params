@@ -45,7 +45,8 @@ def __main__():
         # run the sim for each agent to obtain fitness for each.
         # TODO look into using the same seed for agents in the same generation.
         for agent in roster:
-            # TODO set the KF to use this agent's genome params.
+            # set the KF to use this agent's genome params.
+            agent.set_genome()
             # call the bash script to run the sim.
             run_sim_bash = "./run_sim.sh"
             process = subprocess.Popen(run_sim_bash.split(), stdout=subprocess.PIPE) #cwd='path\to\somewhere'

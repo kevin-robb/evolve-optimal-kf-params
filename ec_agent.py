@@ -59,3 +59,11 @@ class Agent:
         row = ",".join([self.gen_num] + self.genome + [self.fitness])
         file1.write(row + "\n")
         file1.close()
+
+    # set the KF to use this agent's genome
+    def set_genome(self):
+        filepath = "sim_ws/src/capstone/src/genome.csv"
+        file1 = open(filepath, "w")
+        row = ",".join(self.genome)
+        file1.write(row)
+        file1.close
