@@ -35,32 +35,35 @@ def setup_file() -> str:
     file1.write(",".join(header) + "\n")
     return run_id
     
-def __main__():
-    gen_size, gen_max = 15, 5
+def main():
+    # size of each gen, # of gens to run for
+    gen_size, gen_max = 5, 3
     run_id = setup_file()
     
     # create the first generation of agents, with default values.
     roster = initialize_agents(gen_size)
-    while roster[0].gen_num < gen_max:
+    while roster[0].gen_num <= gen_max:
         # run the sim for each agent to obtain fitness for each.
         # TODO look into using the same seed for agents in the same generation.
         for agent in roster:
             # set the KF to use this agent's genome params.
             agent.set_genome()
             # call the bash script to run the sim.
-            run_sim_bash = "./run_sim.sh"
+            run_sim_bash = "bash run_sim.sh"
             process = subprocess.Popen(run_sim_bash.split(), stdout=subprocess.PIPE) #cwd='path\to\somewhere'
             output, error = process.communicate()
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
             agent.fitness = agent.results["Score"]
-        # we now have a fitness for all agents in this generation.
-        # write to a file each agent's genome, fitness, and gen #.
-        for agent in roster:
+            # write this agent & its performance to the file.
             agent.write_to_file(run_id)
         # form the next generation.
-        roster = next_generation()
+        roster = next_generation(roster)
+
     # after repeating for the desired number of generations, run our plotting script.
     # TODO make an R plotting script and run it here with bash.
     # plot the evolution of agents' fitness as well as 
     #   the best agent in the final generation using my previous in-depth script.
+
+if __name__ == "__main__":
+    main()

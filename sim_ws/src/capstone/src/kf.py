@@ -94,7 +94,8 @@ def initialize():
 def read_genome():
     # read the genome from the file.
     global P, P_next, Q, R
-    file1 = open("results.txt", "r+")
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/capstone/src/"
+    file1 = open(filepath + "genome.csv", "r+")
     line = file1.readlines()[0]
     g = [float(g) for g in line.split(",")]
 

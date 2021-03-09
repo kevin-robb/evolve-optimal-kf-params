@@ -42,11 +42,6 @@ class Agent:
         child.mutate()
         return child
 
-    # # get a string representation to be printed to a file for plotting later.
-    # def print_agent(self) -> str:
-    #     return ",".join([self.gen_num] + self.genome + [self.fitness])
-    #     #return str(self.gen_num) + "," + ",".join(self.genome) + "," + str(self.fitness) + "\n"
-
     # write this agent to the file.
     def write_to_file(self, run_id:str):
         filepath = "results/" + run_id + ".csv"
@@ -56,7 +51,7 @@ class Agent:
             # if this is a new file, we have a problem.
             raise Exception ("File does not exist for " + run_id)
         # add the row for this round of results
-        row = ",".join([self.gen_num] + self.genome + [self.fitness])
+        row = ",".join([str(self.gen_num)] + [str(g) for g in self.genome] + [str(self.fitness)])
         file1.write(row + "\n")
         file1.close()
 
@@ -64,6 +59,7 @@ class Agent:
     def set_genome(self):
         filepath = "sim_ws/src/capstone/src/genome.csv"
         file1 = open(filepath, "w")
-        row = ",".join(self.genome)
+        row = ",".join([str(item) for item in self.genome])
+        #row = ",".join(self.genome)
         file1.write(row)
         file1.close
