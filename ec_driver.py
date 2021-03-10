@@ -21,7 +21,7 @@ def next_generation(roster:List):
     # select double what is needed to parent the next generation. (agents can/will be multi-selected)
     parents = choices(roster, weights=r_weights, k=2*len(roster))
     # create the next generation by crossing over pairs of parents.
-    next_gen = [parents[i].crossover(parents[i + len(roster)]) for i in range(len(roster))]
+    next_gen = [parents[i].group_crossover(parents[i + len(roster)]) for i in range(len(roster))]
     return next_gen
 
 def setup_file() -> str:

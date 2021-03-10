@@ -1,7 +1,8 @@
 # this file defines our evolutionary computation agents
 from typing import List, Tuple
-from random import random, uniform, randint
+from random import random, uniform, randint, choice
 from os import stat
+from numpy.random import normal
 
 class Agent:
     # Genome:
@@ -22,22 +23,38 @@ class Agent:
             self.genome = genome
         else:
             self.genome = self.genome_init
+            self.randomize_genome()
     
+    # randomize the genome for the first generation.
+    def randomize_genome(self):
+        # use a gaussian w/ mean 0 and std dev 0.1 to change each gene.
+        self.genome = [abs(g + random.normal(loc=0, scale=0.1)) for g in self.genome]
+
     # mutate the genome of this agent.
     def mutate(self):
         # choose a gene to mutate.
         gene = randint(0,len(self.genome))
-        # choose whether this mutation will be pos/neg.
-        sign = -1 if randint(0,1) < 1 else 1
-        # choose the amount to mutate (not more than 100% the current value)
-        change = min(random() * self.genome[gene], 0.005)
-        # make the mutation.
-        self.genome[gene] += sign * change
+        # choose the amount to mutate (gaussian, mean 0, std dev 0.1) and do it.
+        # make sure it is positive, and that the value doesn't drop too close to 0.
+        self.genome[gene] = min(abs(self.genome[gene] + random.normal(loc=0, scale=0.1)), 0.005)
 
     # cross the genes of this agent with another to produce a child.
     def crossover(self, other_parent:"Agent") -> "Agent":
         # decide which genes will be taken from which parent.
         new_genome = [self.genome[gene] if randint(0,1) < 1 else other_parent.genome[gene] for gene in range(len(self.genome))]
+        child = Agent(new_genome, self.gen_num+1)
+        child.mutate()
+        return child
+    
+    # perform crossover, but do not separate groups of genes belonging to the same matrix.
+    def group_crossover(self, other_parent:"Agent") -> "Agent":
+        # arbitrarily take gene groups from one parent each.
+        selections = [random.choice([True, False]) for i in range(3)]
+        new_p = self.genome[0:4] if selections[0] else other_parent.genome[0:4]
+        new_q = self.genome[4:8] if selections[1] else other_parent.genome[4:8]
+        new_r = self.genome[8:12] if selections[2] else other_parent.genome[8:12]
+        new_genome = new_p + new_q + new_r
+        # make the new child and mutate it.
         child = Agent(new_genome, self.gen_num+1)
         child.mutate()
         return child
