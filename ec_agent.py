@@ -61,7 +61,7 @@ class Agent:
 
     # write this agent to the file.
     def write_to_file(self, run_id:str):
-        filepath = "results/" + run_id + ".csv"
+        filepath = "ec_data/" + run_id + ".csv"
         # don't overwrite with each statement (a=append).
         file1 = open(filepath, "a+")
         if stat(filepath).st_size == 0:

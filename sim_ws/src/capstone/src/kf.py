@@ -70,7 +70,7 @@ Truth = [0,0,0,0,0]
 state_pub = None
 # store data to be written to file
 data_for_file = []
-filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
+filepath = "/home/"+getuser()+"/capstone-kf-ml/kf_data/"
 filename = None
 filename_pub = None
 

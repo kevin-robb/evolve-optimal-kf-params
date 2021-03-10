@@ -15,7 +15,7 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
   library(cowplot)
   
   # read in the data from the file
-  filepath = paste("./data/", filename, ".csv", sep="")
+  filepath = paste("./kf_data/", filename, ".csv", sep="")
   df=read.csv(filepath)
   # map to meas (4d), pred (4d), state (4d), truth (5d), cur_hdg (1d)
   names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","x_pred","y_pred","xdot_pred","ydot_pred","x_state","y_state","xdot_state","ydot_state","x_true","y_true","xdot_true","ydot_true","vel_true","cur_hdg")# add a timestep independent variable
@@ -104,7 +104,7 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
   p_tot
   
   if (png == TRUE) {
-    plot_path = paste("./plots/", filename, "_track", ".png", sep="")
+    plot_path = paste("./kf_plots/", filename, "_track", ".png", sep="")
     cowplot::save_plot(plot_path,p_tot,base_height=4,base_width=6.5)
   }
   

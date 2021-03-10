@@ -1,0 +1,18 @@
+---
+title: "EC Analysis"
+author: "Kevin Robb"
+date: "3/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Use our custom function to plot EC data
+
+```{r}
+source("functions/plot_ec_fitness.R")
+fname = "ec_2021-03-08-18-23-03"
+plot_ec_fitness(filename=fname,png=TRUE)
+```
