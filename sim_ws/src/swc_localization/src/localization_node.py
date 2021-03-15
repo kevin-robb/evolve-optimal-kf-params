@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
+from os import write
 import rospy
 from math import sqrt#, pi
+from getpass import getuser
+import numpy as np
+import csv
 from tf import transformations
 from std_msgs.msg import Float32, Float32MultiArray, Bool #, String
 from sensor_msgs.msg import Imu
@@ -49,16 +53,38 @@ def interpret_waypoints(waypoints):
     visited = [False, False, False]
     wp_interpreted = True
     print("waypoints interpreted")
-    # # wait until the filename is received to attempt writing to a file
-    # cur_time = time.time()
-    # while(time.time() - cur_time < 1):
-    #     pass
-    # save_wpts_to_file()
+    # save waypoints to file
+    print("about to call write_to_file")
+    write_to_file()
+    print("I should have just finished writing to file")
 
-    # tell the check_for_shutdown node that we have started
-    init_msg = Bool()
-    init_msg.data = True
-    init_pub.publish(init_msg)
+# write the waypoints to a file for use in plotting later.
+def write_to_file():
+    print("write to file called")
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/swc_localization/src/"
+    #filepath += filename + ".csv"
+    # want to replace the previous waypoints (w=write).
+    #file1 = open(filepath, "w+")
+    # grab the waypoints already turned to meters
+    wp = [0,0]
+    for bp in bonus_gps:
+        pt = [bp.latitude, bp.longitude]
+        wp += pt
+    wp += [goal_gps.latitude, goal_gps.longitude]
+    print(wp)
+    # write the row
+    # row = ",".join([str(val) for val in wp])
+    # file1.write(row + "\n")
+    # file1.close()
+
+    # try with numpy
+    #np.savetxt(filepath + filename + ".csv", wp, delimiter=",")
+
+    # try with csv
+    with open('waypoints.csv', mode='w') as wp_file:
+        f_writer = csv.writer(wp_file, delimiter=',')
+
+        f_writer.writerow([str(val) for val in wp])
 
 def make_rel_gps(global_gps):
     # transform a GPS waypoint from global GPS to meters relative to start
@@ -157,22 +183,8 @@ def get_kf_state(state_msg):
     kf_pos.longitude = State[0]
     kf_pos.latitude = State[1]
 
-# def save_wpts_to_file():
-#     print("save_wpts_to_file was called!")
-#     # is called when waypoints have been processed
-#     data_for_file = [[bonus_gps[i].latitude, bonus_gps[i].longitude] for i in range(len(bonus_gps))]
-#     data_for_file.append([goal_gps.latitide, goal_gps.longitude])
-#     filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
-#     np.savetxt(filepath + "wp_" + filename + ".csv", data_for_file, delimiter=",")
-#     print("saved waypoints to a file!")
-
-# def get_filename(str_msg):
-#     global filename
-#     filename = str_msg.data
-#     print("received the filename!")
-
 def main():
-    global loc_pub, hdg_pub, dist_pub, init_pub
+    global loc_pub, hdg_pub, dist_pub
 
     # Initalize our node in ROS
     rospy.init_node('localization_node')
@@ -183,16 +195,12 @@ def main():
     hdg_pub = rospy.Publisher("/swc/current_heading", Float32, queue_size=1)
     # publish distance to current target waypoint
     dist_pub = rospy.Publisher("/swc/dist", Float32, queue_size=1)
-    # publish True to tell the shutdown node that we have started
-    init_pub = rospy.Publisher("/swc/init", Bool, queue_size=1)
 
     # subscribe to robot's current GPS position and IMU data
     rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
     rospy.Subscriber("/sim/imu", Imu, update_heading, queue_size=1)
     # subscribe to KF State
     rospy.Subscriber("/kf/state", Float32MultiArray, get_kf_state, queue_size=1)
-    # subscribe to KF data filename so we can write the waypoints to a file of the same name
-    #rospy.Subscriber("/kf/filename", String, get_filename, queue_size=1)
 
     # Wait for Waypoints service and then request waypoints
     rospy.wait_for_service('/sim/waypoints')
