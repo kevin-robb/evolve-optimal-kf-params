@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 
-from os import write
 import rospy
-from math import sqrt#, pi
+from math import sqrt
 from getpass import getuser
-import numpy as np
-import csv
 from tf import transformations
 from std_msgs.msg import Float32, Float32MultiArray, Bool #, String
 from sensor_msgs.msg import Imu
 from swc_msgs.msg import Gps
 from swc_msgs.srv import Waypoints
-# import numpy as np
-# from getpass import getuser
-# import time
 
 # publishers
 loc_pub = None
@@ -54,37 +48,26 @@ def interpret_waypoints(waypoints):
     wp_interpreted = True
     print("waypoints interpreted")
     # save waypoints to file
-    print("about to call write_to_file")
     write_to_file()
-    print("I should have just finished writing to file")
 
 # write the waypoints to a file for use in plotting later.
 def write_to_file():
-    print("write to file called")
+    print("Writing waypoints to file")
     filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/swc_localization/src/"
     #filepath += filename + ".csv"
     # want to replace the previous waypoints (w=write).
-    #file1 = open(filepath, "w+")
+    file1 = open(filepath + "waypoints.csv", "w+")
     # grab the waypoints already turned to meters
     wp = [0,0]
     for bp in bonus_gps:
         pt = [bp.latitude, bp.longitude]
         wp += pt
     wp += [goal_gps.latitude, goal_gps.longitude]
-    print(wp)
+    #print(wp)
     # write the row
-    # row = ",".join([str(val) for val in wp])
-    # file1.write(row + "\n")
-    # file1.close()
-
-    # try with numpy
-    #np.savetxt(filepath + filename + ".csv", wp, delimiter=",")
-
-    # try with csv
-    with open('waypoints.csv', mode='w') as wp_file:
-        f_writer = csv.writer(wp_file, delimiter=',')
-
-        f_writer.writerow([str(val) for val in wp])
+    row = ",".join([str(val) for val in wp])
+    file1.write(row + "\n")
+    file1.close()
 
 def make_rel_gps(global_gps):
     # transform a GPS waypoint from global GPS to meters relative to start
