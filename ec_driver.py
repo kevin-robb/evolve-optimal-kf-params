@@ -6,6 +6,7 @@ from typing import Dict, List
 from random import choices
 from datetime import datetime
 import subprocess
+from os import path, mkdir
 
 def initialize_agents(roster_size:int) -> List:
     roster = []
@@ -24,16 +25,27 @@ def next_generation(roster:List):
     next_gen = [parents[i].group_crossover(parents[i + len(roster)]) for i in range(len(roster))]
     return next_gen
 
-def setup_file() -> str:
-    # make a unique ID for tracking this run's files.
-    dt = datetime.now()
-    run_id = "ec_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
-    filepath = "ec_data/" + run_id + ".csv"
+def setup_summary_file(directory:str, run_id:str) -> str:
+    filepath = directory + "/summary_" + run_id + ".csv"
     # create the file and write the header to the first line.
     header = ["generation_number","p_11","p_22","p_33","p_44","q_11","q_22","q_33","q_44","r_11","r_22","r_33","r_44","fitness"]
     file1 = open(filepath, "a+")
     file1.write(",".join(header) + "\n")
-    return run_id
+    return filepath
+
+def setup_dir():
+    # make a unique ID for tracking this run's files.
+    dt = datetime.now()
+    run_id = dt.strftime("%Y-%m-%d-%H-%M-%S")
+    # make a directory to store KF data, gen summaries, and plots
+    directory = "run_" + run_id
+    parent_dir = "/home/kevinrobb/capstone-kf-ml/runs/"
+    path = path.join(parent_dir, directory) 
+    mkdir(path)
+    # create the summary file for this run
+    setup_summary_file(directory, run_id)
+    return "summary_" + run_id
+
 
 def run_bash_cmd(command:str):
     # run something on the command line.
@@ -44,6 +56,9 @@ def main():
     # size of each gen, # of gens to run for
     gen_size, gen_max = 5, 3
     run_id = setup_file()
+
+    # make a directory for the data
+    setup_dir(run_id=run_id)
     
     # create the first generation of agents, with default values.
     roster = initialize_agents(gen_size)

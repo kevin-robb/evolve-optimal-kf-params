@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import rospy
+import rospy, sys
 from std_msgs.msg import Float32, Float32MultiArray, String
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
@@ -70,9 +70,8 @@ Truth = [0,0,0,0,0]
 state_pub = None
 # store data to be written to file
 data_for_file = []
-filepath = "/home/"+getuser()+"/capstone-kf-ml/kf_data/"
+filepath = None
 filename = None
-filename_pub = None
 
 ## Kalman Filter functions
 def initialize():
@@ -243,33 +242,37 @@ def save_to_file():
     data_for_file.append(mat_to_ls(Z) + mat_to_ls(X_next) + mat_to_ls(X) + Truth + [cur_hdg])
     np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
-def set_filename():
-    global filename
-    # use datetime to ensure unique filenames
-    dt = datetime.now()
-    # filename will specify: (MANUALLY CHANGE THESE WHEN CHANGING SIM SETTINGS)
-    #  obstacles (0,1=normal,2=hard)
-    obstacles = 0
-    #  noise (0,1=reduced,2=realistic)
-    noise = 2
-    filename = "kf_o" + str(obstacles) + "_n" + str(noise) + "_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
-    print("filename is " + filename)
-    # publish the filename so our waypoints can be written to a file and referenced if needed
-    # fname_msg = String()
-    # fname_msg.data = filename
-    # cur_time = time.time()
-    # while(time.time() - cur_time < 3):
-    #     filename_pub.publish(fname_msg)
-    # print("sent the filename!")
+def set_filename(directory:str = "kf_data/", fname:str = None):
+    global filepath, filename
+    # note that filepath must end in "/"
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/" + directory
+    # set either the default (unique) filename, or the provided one
+    if fname is None:
+        # use datetime to ensure unique filenames
+        dt = datetime.now()
+        # filename will specify:
+        #  obstacles (0,1=normal,2=hard)
+        obstacles = 0
+        #  noise (0,1=reduced,2=realistic)
+        noise = 2
+        filename = "kf_o" + str(obstacles) + "_n" + str(noise) + "_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
+    else:
+        filename = fname
+    print("filepath is " + filepath + filename)
+
 
 def main():
-    global state_pub, data_for_file, filename_pub
+    global state_pub, data_for_file
     # initalize the node in ROS
     rospy.init_node('kf_node')
     data_for_file = []
-    # create the filename
-    #filename_pub = rospy.Publisher("/kf/filename", String, queue_size=1)
-    set_filename()
+
+    # grab the filename from command line args
+    myargv = rospy.myargv(argv=sys.argv)
+    if len(myargv) < 3:
+        set_filename()
+    else:
+        set_filename(directory=myargv[1], fname=myargv[2])
 
     ## Subscribe to Sensor Values
     # robot's current heading is already published by localization_node from IMU
