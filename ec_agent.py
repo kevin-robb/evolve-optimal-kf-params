@@ -15,7 +15,8 @@ class Agent:
     genome_init = p_diag + q_diag + r_diag
 
     # instantiate an agent, either with the default genome or a given one.
-    def __init__(self, genome:List[float] = None, gen_num:int = 1):
+    def __init__(self, id:int, genome:List[float] = None, gen_num:int = 1):
+        self.id = id
         self.fitness = -1
         self.results = {}
         self.gen_num = gen_num
@@ -39,15 +40,16 @@ class Agent:
         self.genome[gene] = min(abs(self.genome[gene] + normal(loc=0, scale=0.01)), 0.005)
 
     # cross the genes of this agent with another to produce a child.
-    def crossover(self, other_parent:"Agent") -> "Agent":
+    def crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
         # decide which genes will be taken from which parent.
         new_genome = [self.genome[gene] if randint(0,1) < 1 else other_parent.genome[gene] for gene in range(len(self.genome))]
-        child = Agent(new_genome, self.gen_num+1)
+        child = Agent(new_genome, next_id[0], self.gen_num+1)
+        next_id[0] += 1
         child.mutate()
         return child
     
     # perform crossover, but do not separate groups of genes belonging to the same matrix.
-    def group_crossover(self, other_parent:"Agent") -> "Agent":
+    def group_crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
         # arbitrarily take gene groups from one parent each.
         selections = [choice([True, False]) for i in range(3)]
         new_p = self.genome[0:4] if selections[0] else other_parent.genome[0:4]
@@ -55,18 +57,18 @@ class Agent:
         new_r = self.genome[8:12] if selections[2] else other_parent.genome[8:12]
         new_genome = new_p + new_q + new_r
         # make the new child and mutate it.
-        child = Agent(new_genome, self.gen_num+1)
+        child = Agent(new_genome, next_id[0], self.gen_num+1)
+        next_id[0] += 1
         child.mutate()
         return child
 
     # write this agent to the file.
-    def write_to_file(self, run_id:str):
-        filepath = "ec_data/" + run_id + ".csv"
+    def write_to_file(self, filepath:str):
         # don't overwrite with each statement (a=append).
         file1 = open(filepath, "a+")
         if stat(filepath).st_size == 0:
             # if this is a new file, we have a problem.
-            raise Exception ("File does not exist for " + run_id)
+            raise Exception ("File does not exist for " + filepath)
         # add the row for this round of results
         row = ",".join([str(self.gen_num)] + [str(g) for g in self.genome] + [str(self.fitness)])
         file1.write(row + "\n")
@@ -77,6 +79,5 @@ class Agent:
         filepath = "sim_ws/src/capstone/src/genome.csv"
         file1 = open(filepath, "w")
         row = ",".join([str(item) for item in self.genome])
-        #row = ",".join(self.genome)
         file1.write(row)
         file1.close

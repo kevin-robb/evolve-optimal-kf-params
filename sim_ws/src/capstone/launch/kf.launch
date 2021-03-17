@@ -13,4 +13,5 @@
 
     <!-- command line arguments -->
     <arg name="directory" default="kf_data" />
+    <arg name="fname" default="missing_fname" />
 </launch>
