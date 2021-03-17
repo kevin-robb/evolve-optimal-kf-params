@@ -90,10 +90,11 @@ def initialize():
         initialized = True
         print("initialized KF")
 
+# read the genome from the file to set KF params.
 def read_genome():
-    # read the genome from the file.
     global P, P_next, Q, R
-    filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/capstone/src/"
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/config/"
+    #filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/capstone/src/"
     file1 = open(filepath + "genome.csv", "r+")
     line = file1.readlines()[0]
     g = [float(g) for g in line.split(",")]
@@ -242,22 +243,18 @@ def save_to_file():
     data_for_file.append(mat_to_ls(Z) + mat_to_ls(X_next) + mat_to_ls(X) + Truth + [cur_hdg])
     np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
 
-def set_filename(directory:str = "kf_data/", fname:str = None):
+# read destination directory & filename from config.
+def set_filename():
     global filepath, filename
-    # note that filepath must end in "/"
-    filepath = "/home/"+getuser()+"/capstone-kf-ml/" + directory
-    # set either the default (unique) filename, or the provided one
-    if fname is None:
-        # use datetime to ensure unique filenames
+    path = "/home/"+getuser()+"/capstone-kf-ml/config/"
+    file1 = open(path + "kf_data_destination.csv", "r+")
+    line = file1.readlines()[0].split(",")
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/" + line[0]
+    if line[1] == "default":
         dt = datetime.now()
-        # filename will specify:
-        #  obstacles (0,1=normal,2=hard)
-        obstacles = 0
-        #  noise (0,1=reduced,2=realistic)
-        noise = 2
-        filename = "kf_o" + str(obstacles) + "_n" + str(noise) + "_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
+        filename = "kf_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
     else:
-        filename = fname
+        filename = line[1]
     print("filepath is " + filepath + filename)
 
 
@@ -267,12 +264,8 @@ def main():
     rospy.init_node('kf_node')
     data_for_file = []
 
-    # grab the filename from command line args
-    myargv = rospy.myargv(argv=sys.argv)
-    if len(myargv) < 3:
-        set_filename()
-    else:
-        set_filename(directory=myargv[1], fname=myargv[2])
+    # use config data to set the filepath for data output
+    set_filename()
 
     ## Subscribe to Sensor Values
     # robot's current heading is already published by localization_node from IMU

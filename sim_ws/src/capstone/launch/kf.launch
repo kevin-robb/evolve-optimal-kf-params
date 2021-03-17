@@ -10,8 +10,4 @@
     <node pkg="swc_localization" type="localization_node.py" name="localization_node" output="screen" />
     <!-- kalman filter node -->
     <node pkg="capstone" type="kf.py" name="kf_node" output="screen" />
-
-    <!-- command line arguments -->
-    <arg name="directory" default="kf_data" />
-    <arg name="fname" default="missing_fname" />
 </launch>

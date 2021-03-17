@@ -10,7 +10,7 @@
 ./../Simulators/SCR_SWC_20_SIM_6.0_LINUX/SCRSWC20.x86_64 &
 # Start my ROS code
 source sim_ws/devel/setup.bash
-roslaunch capstone kf.launch $1 $2 &
+roslaunch capstone kf.launch &
 # Wait for the simulator to finish, then kill ROS.
 wait %1
 #kill -9 $ROS_PID

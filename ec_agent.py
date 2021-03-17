@@ -76,7 +76,7 @@ class Agent:
 
     # set the KF to use this agent's genome
     def set_genome(self):
-        filepath = "sim_ws/src/capstone/src/genome.csv"
+        filepath = "config/genome.csv"
         file1 = open(filepath, "w")
         row = ",".join([str(item) for item in self.genome])
         file1.write(row)

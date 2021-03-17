@@ -47,6 +47,16 @@ def setup_dir() -> Tuple:
     # create the summary file for this run and return the filepath.
     return directory, setup_summary_file(directory, run_id)
 
+def set_kf_data_loc(directory:str, fname:str):
+    filepath = "config/kf_data_destination.csv"
+    # make sure directory ends in "/"
+    if directory[-1] != "/": 
+        directory += "/"
+    file1 = open(filepath, "w")
+    row = directory + "," + fname
+    file1.write(row)
+    file1.close
+
 def run_bash_cmd(command:str):
     # run something on the command line.
     process = subprocess.Popen(command.split(), stdout=subprocess.PIPE) #cwd='path\to\somewhere'
@@ -69,20 +79,26 @@ def main():
         for agent in roster:
             # set the KF to use this agent's genome params.
             agent.set_genome()
+            # make sure the KF outputs data to the right place.
+            set_kf_data_loc(directory, "kf_output_"+str(agent.id))
             # call the bash script to run the sim.
-            # need to pass in the directory and a filename for the KF data to output to.
-            run_bash_cmd("bash run_sim.sh " + directory + " kf_output_" + agent.id)            
+            run_bash_cmd("bash run_sim.sh")
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
             agent.fitness = agent.results["Score"]
             # write this agent & its performance to the file.
             agent.write_to_file(summary_filepath)
+            # TODO grab and do something with the waypoints before they are gone,
+            # or change waypoints file to accumulate, and get wiped at the start of a run.
         # form the next generation.
         roster = next_generation(roster, next_id)
 
     # after repeating for the desired number of generations, run our plotting script.
     run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + summary_filepath + " true")
     # TODO also plot the best agent in the final generation using my previous in-depth script.
+
+    # reset the config file for the KF to use its default options
+    set_kf_data_loc("kf_data/", "default")
 
 if __name__ == "__main__":
     main()

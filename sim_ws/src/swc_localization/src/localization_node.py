@@ -53,11 +53,11 @@ def interpret_waypoints(waypoints):
 # write the waypoints to a file for use in plotting later.
 def write_to_file():
     print("Writing waypoints to file")
-    filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/swc_localization/src/"
-    #filepath += filename + ".csv"
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/config/"
+    #filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/swc_localization/src/"
     # want to replace the previous waypoints (w=write).
     file1 = open(filepath + "waypoints.csv", "w+")
-    # grab the waypoints already turned to meters
+    # grab the waypoints already turned to meters.
     wp = [0,0]
     for bp in bonus_gps:
         pt = [bp.latitude, bp.longitude]
