@@ -57,6 +57,18 @@ def set_kf_data_loc(directory:str, fname:str):
     file1.write(row)
     file1.close
 
+def set_genome_to_default():
+    # reset the genome to its default values so the KF can be run on its own if needed.
+    p_diag = [0.25, 0.25, 0.25, 0.5]
+    q_diag = [0.01, 0.01, 0.01, 0.01]
+    r_diag = [0.01, 0.01, 0.01, 0.01]
+    genome = p_diag + q_diag + r_diag
+    filepath = "config/genome.csv"
+    file1 = open(filepath, "w")
+    row = ",".join([str(item) for item in genome])
+    file1.write(row)
+    file1.close
+
 def run_bash_cmd(command:str):
     # run something on the command line.
     process = subprocess.Popen(command.split(), stdout=subprocess.PIPE) #cwd='path\to\somewhere'
@@ -97,8 +109,10 @@ def main():
     run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + summary_filepath + " true")
     # TODO also plot the best agent in the final generation using my previous in-depth script.
 
-    # reset the config file for the KF to use its default options
+    # reset the config file for the KF to use its default options.
     set_kf_data_loc("kf_data/", "default")
+    set_genome_to_default()
+
 
 if __name__ == "__main__":
     main()

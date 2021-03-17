@@ -1,2 +1,7 @@
 # capstone-kf-ml
 My engineering physics capstone work regarding Kalman filters and machine learning.
+
+# Launch Instructions
+There are two ways to run this project. The default, single run can be performed by first launching the simulator, sourcing this project with `source sim_ws/devel/setup.bash`, and then running `roslaunch capstone kf.launch` from either the repo or within the ROS workspace. Data generated this way will be stored in the `kf_data` folder, and can be manually plotted with my plotting script by running `Rscript --vanilla functions/plot_cl_track.R <filename> true`. These plots will end up in the `kf_plots` directory. 
+
+The more complex way to use this program involves my second semester work with evolutionary computation. From within the repo's main directory, running `python3 ec_driver.py` will take care of everything. This python script keeps track of all agents and their genomes, and collects fitness for each one by launching the simulator, launching ROS, terminating the processes when they have finished, and repeating for each agent. Data from this procedure will be collected and plotted automatically in aggregate, and will be stored in its own directory within `runs`.
