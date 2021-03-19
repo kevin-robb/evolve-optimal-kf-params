@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy, sys
-from std_msgs.msg import Float32, Float32MultiArray, String
+from std_msgs.msg import Float32, Float32MultiArray, Bool
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
@@ -67,6 +67,7 @@ initialized = False
 Truth = [0,0,0,0,0]
 
 ## Publishers
+ready_pub = None
 state_pub = None
 # store data to be written to file
 data_for_file = []
@@ -88,6 +89,9 @@ def initialize():
     if filename is not None and cur_gps is not None and start_gps is not None and cur_hdg is not None:
         ## set initialized flag
         initialized = True
+        ready_msg = Bool()
+        ready_msg.data = True
+        ready_pub.publish(ready_msg)
         print("initialized KF")
 
 # read the genome from the file to set KF params.
@@ -259,7 +263,7 @@ def set_filename():
 
 
 def main():
-    global state_pub, data_for_file
+    global state_pub, data_for_file, ready_pub
     # initalize the node in ROS
     rospy.init_node('kf_node')
     data_for_file = []
@@ -284,6 +288,8 @@ def main():
 
     # publish the KF state for the localization to use
     state_pub = rospy.Publisher("/kf/state", Float32MultiArray, queue_size=1)
+    # publish a go-ahead signal for the control node to have it wait til the KF is ready
+    ready_pub = rospy.Publisher("/kf/ready", Bool, queue_size=1)
     
     # create timer with a period of 0.1 (10 Hz)
     rospy.Timer(rospy.Duration(timer_period), timer_callback)

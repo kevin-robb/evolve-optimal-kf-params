@@ -58,15 +58,13 @@ def write_to_file():
     # want to replace the previous waypoints (w=write).
     file1 = open(filepath + "waypoints.csv", "w+")
     # grab the waypoints already turned to meters.
-    wp = [0,0]
+    lines = [["x","y"],["0.0","0.0"]]
     for bp in bonus_gps:
-        pt = [bp.latitude, bp.longitude]
-        wp += pt
-    wp += [goal_gps.latitude, goal_gps.longitude]
-    #print(wp)
-    # write the row
-    row = ",".join([str(val) for val in wp])
-    file1.write(row + "\n")
+        lines += [str(bp.latitude), str(bp.longitude)]
+    lines += [str(goal_gps.latitude), str(goal_gps.longitude)]
+    # write each row
+    for row in lines:
+        file1.write(",".join(row) + "\n")
     file1.close()
 
 def make_rel_gps(global_gps):
@@ -82,9 +80,21 @@ def arrived_at_point(point_gps):
     else:
         return False
 
+def check_in_bounds(robot_gps):
+    print("Robot GPS:[" + str(robot_gps.latitude) + "," + str(robot_gps.longitude) + "]")
+    x_bounds, y_bounds = [-15, 100], [-28, 28]
+    if (robot_gps.latitude < x_bounds[0] or 
+        robot_gps.latitude > x_bounds[1] or
+        robot_gps.longitude < y_bounds[0] or 
+        robot_gps.longitude > y_bounds[1]):
+        rospy.signal_shutdown("Robot went out of bounds")
+    return True
+
 def update_robot_gps(gps_reading):
     global robot_gps, visited
     robot_gps = gps_reading
+    # make sure the robot is still in bounds
+    check_in_bounds(make_rel_gps(robot_gps))
     # check all the bonus waypoints to see if visited.
     # make sure the waypoints have been interpreted first.
     if wp_interpreted:
@@ -170,7 +180,7 @@ def main():
     global loc_pub, hdg_pub, dist_pub
 
     # Initalize our node in ROS
-    rospy.init_node('localization_node')
+    rospy.init_node('localization_node', disable_signals=True)
 
     # publish target point location relative to robot's current position
     loc_pub = rospy.Publisher("/swc/goal", Gps, queue_size=1)

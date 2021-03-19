@@ -8,7 +8,10 @@ def read_file():
     # open file in read mode.
     file1 = open("results.txt", "r+")
     results = file1.readlines()
-    # assume empty lines are skipped
+    file1.close()
+    # check for error
+    if results[0][0:5] == "Error":
+        return {"Score":800}
     
     # interpret the important elements, and write to dictionary.
     keys, values = [], []
@@ -63,7 +66,7 @@ def write_file(elements):
 #write_file(el)
 
 
-""" # Sample results.txt
+""" # Sample results.txt on successful completion of course.
 Team WickedSlickRobotics
 Date: 2021-02-23 17:50:17 -06
 Seed: 76168294
@@ -79,4 +82,8 @@ Waypoint 1 reached: x0.80
 Waypoint 2 reached: x0.80
 Waypoint 3 reached: x0.80
 44% Damaged: x5.01
+"""
+
+""" #Sample results.txt on simulator shutdown.
+Error: Connection to RosBridge lost!
 """

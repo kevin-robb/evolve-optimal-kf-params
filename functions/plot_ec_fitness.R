@@ -2,7 +2,7 @@
 #
 # Generates a PNG showing a column of all agents in a generation.
 #
-plot_ec_fitness <- function(filename, png=TRUE) {
+plot_ec_fitness <- function(dirpath, png=TRUE) {
   library(reshape2)
   library(ggplot2)
   library(grid)
@@ -10,7 +10,7 @@ plot_ec_fitness <- function(filename, png=TRUE) {
   library(cowplot)
   
   # read in the data from the file. first line is header.
-  filepath = paste("./ec_data/", filename, ".csv", sep="")
+  filepath = paste("./", dirpath, "/summary.csv", sep="")
   df=read.csv(filepath)
 
   #head(df)
@@ -31,7 +31,7 @@ plot_ec_fitness <- function(filename, png=TRUE) {
   
   # write the plot to a file.
   if (png == TRUE) {
-    plot_path = paste("./ec_plots/", filename, ".png", sep="")
+    plot_path = paste("./", dirpath, "/summary.png", sep="")
     cowplot::save_plot(plot_path,p,base_height=4,base_width=6.5)
   } else {
     p

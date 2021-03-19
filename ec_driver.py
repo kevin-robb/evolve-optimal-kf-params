@@ -27,7 +27,7 @@ def next_generation(roster:List, next_id:List[int]) -> List:
     return next_gen
 
 def setup_summary_file(directory:str, run_id:str) -> str:
-    filepath = directory + "/summary_" + run_id + ".csv"
+    filepath = directory + "/summary.csv"
     # create the file and write the header to the first line.
     header = ["agent_id","generation_number","p_11","p_22","p_33","p_44","q_11","q_22","q_33","q_44","r_11","r_22","r_33","r_44","fitness"]
     file1 = open(filepath, "a+")
@@ -69,6 +69,15 @@ def set_genome_to_default():
     file1.write(row)
     file1.close
 
+# def get_waypoints() -> List[float]:
+#     # grab the waypoints from the file they are written to.
+#     filepath = "config/waypoints.csv"
+#     file1 = open(filepath, "r+")
+#     line = file1.readlines()[0]
+#     wp = [float(num) for num in line.split(",")]
+#     file1.close()
+#     return wp
+
 def run_bash_cmd(command:str):
     # run something on the command line.
     process = subprocess.Popen(command.split(), stdout=subprocess.PIPE) #cwd='path\to\somewhere'
@@ -92,7 +101,8 @@ def main():
             # set the KF to use this agent's genome params.
             agent.set_genome()
             # make sure the KF outputs data to the right place.
-            set_kf_data_loc(directory, "kf_output_"+str(agent.id))
+            agent_filename = "kf_output_" + str(agent.id)
+            set_kf_data_loc(directory, agent_filename)
             # call the bash script to run the sim.
             run_bash_cmd("bash run_sim.sh")
             # assign the agent a fitness based on the results.
@@ -100,13 +110,14 @@ def main():
             agent.fitness = agent.results["Score"]
             # write this agent & its performance to the file.
             agent.write_to_file(summary_filepath)
-            # TODO grab and do something with the waypoints before they are gone,
-            # or change waypoints file to accumulate, and get wiped at the start of a run.
+            # generate the plot for this agent's KF data.
+            run_bash_cmd("Rscript --vanilla functions/plot_cl_track.R " + agent_filename + " " + directory)
+
         # form the next generation.
         roster = next_generation(roster, next_id)
 
     # after repeating for the desired number of generations, run our plotting script.
-    run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + summary_filepath + " true")
+    run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + directory)
     # TODO also plot the best agent in the final generation using my previous in-depth script.
 
     # reset the config file for the KF to use its default options.

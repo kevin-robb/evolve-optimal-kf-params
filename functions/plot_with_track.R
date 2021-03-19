@@ -7,15 +7,19 @@
 # Also shows the path followed by the robot (X vs Y),
 # and optionally show the measured heading in a separate plot.
 #
-plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
+plot_with_track <- function(filename, dirpath, plot_hdg=FALSE) {
   library(reshape2)
   library(ggplot2)
   library(grid)
   library(gridExtra)
   library(cowplot)
+
+  # get the waypoints
+  wp_path = "./config/waypoints.csv"
+  wp_df=read.csv(wp_path)
   
   # read in the data from the file
-  filepath = paste("./kf_data/", filename, ".csv", sep="")
+  filepath = paste("./", dirpath, "/", filename, ".csv", sep="")
   df=read.csv(filepath)
   # map to meas (4d), pred (4d), state (4d), truth (5d), cur_hdg (1d)
   names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","x_pred","y_pred","xdot_pred","ydot_pred","x_state","y_state","xdot_state","ydot_state","x_true","y_true","xdot_true","ydot_true","vel_true","cur_hdg")# add a timestep independent variable
@@ -75,6 +79,8 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
     coord_cartesian(xlim = c(25, -25), ylim = c(0, 90)) +
     theme_minimal_grid(12) #+ theme(legend.position="none")
   p_t
+
+  # TODO add the waypoints to the path plot
   
   ## combine plots
 
@@ -103,9 +109,15 @@ plot_with_track <- function(filename, png=TRUE, plot_hdg=FALSE, w=1000,h=750) {
   p_tot <- cowplot::plot_grid(p_left,p_right,ncol=2,rel_widths=c(4,3))
   p_tot
   
-  if (png == TRUE) {
+  # set plot location
+  if (dirpath == "kf_data") {
+    # default option
     plot_path = paste("./kf_plots/", filename, "_track", ".png", sep="")
-    cowplot::save_plot(plot_path,p_tot,base_height=4,base_width=6.5)
+  } else {
+    # write the plots to the same file the data came from
+    plot_path = paste("./", dirpath, "/", filename, ".png", sep="")
   }
+  # store the plot PNG
+  cowplot::save_plot(plot_path,p_tot,base_height=4,base_width=6.5)
   
 }

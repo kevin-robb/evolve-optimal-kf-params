@@ -7,7 +7,7 @@
     <!-- path planning node -->
     <node pkg="swc_nav" type="path_node.py" name="path_node" output="screen" />
     <!-- localization node -->
-    <node pkg="swc_localization" type="localization_node.py" name="localization_node" output="screen" />
+    <node pkg="swc_localization" type="localization_node.py" name="localization_node" required="true" output="screen" />
     <!-- kalman filter node -->
     <node pkg="capstone" type="kf.py" name="kf_node" output="screen" />
 </launch>
