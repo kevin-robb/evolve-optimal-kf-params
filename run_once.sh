@@ -11,7 +11,7 @@ source sim_ws/devel/setup.bash
 if [ "$ARG" = "$DEF" ]; then
     echo "Using default KF settings."
     # make sure the KF uses its default parameters.
-    python3 functions/reset_for_solo_run.py
+    FNAME=python3 functions/reset_for_solo_run.py
 fi
 
 # Launch the simulator.
@@ -29,6 +29,13 @@ wait %1
 #kill -9 $ROS_PID
 killall -9 roscore
 killall -9 rosmaster
+
+# in the default case, go ahead and plot the data
+if [ "$ARG" = "$DEF" ]; then
+    echo "Creating plot of KF data."
+    Rscript --vanilla functions/plot_cl_track.R $FNAME
+    #need to pass the filename as a param, which is annoying to get here
+fi
 
 # the script should now kill itself so we can move on
 kill -9 $$

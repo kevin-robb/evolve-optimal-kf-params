@@ -257,6 +257,7 @@ def set_filename():
     file1 = open(path + "kf_data_destination.csv", "r+")
     line = file1.readlines()[0].split(",")
     filepath = "/home/"+getuser()+"/capstone-kf-ml/" + line[0]
+    print("KF Data filename is " + line[1])
     if line[1] == "default":
         dt = datetime.now()
         filename = "kf_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
