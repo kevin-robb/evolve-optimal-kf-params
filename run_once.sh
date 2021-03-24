@@ -1,5 +1,18 @@
 #!/bin/bash
-# This script will launch the simulator and initiate my ROS code for the current agent's genome.
+# This script will launch the simulator/ROS.
+# The optional parameter may tell us to use default settings.
+
+ARG=${1:-empty}
+DEF="default"
+
+# make sure we have sourced the right ros workspace.
+source sim_ws/devel/setup.bash
+
+if [ "$ARG" = "$DEF" ]; then
+    echo "Using default KF settings."
+    # make sure the KF uses its default parameters.
+    python3 functions/reset_for_solo_run.py
+fi
 
 # Launch the simulator.
 # This assumes you are using the SWC sim version 6.0,
@@ -8,8 +21,8 @@
 # Lastly, when the sim opens, you need to set the "repo root".
 # For me, this is "/home/kevinrobb/capstone-kf-ml".
 ./../Simulators/SCR_SWC_20_SIM_6.0_LINUX/SCRSWC20.x86_64 &
+
 # Start my ROS code
-source sim_ws/devel/setup.bash
 roslaunch capstone kf.launch &
 # Wait for the simulator to finish, then kill ROS.
 wait %1

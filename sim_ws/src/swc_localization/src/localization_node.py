@@ -14,7 +14,10 @@ loc_pub = None
 hdg_pub = None
 dist_pub = None
 # robot's current GPS location
-robot_gps = Gps()
+#robot_gps = Gps()
+# boundaries. if the robot goes out, kill ROS
+lat_bounds = [-15.0, 100.0]
+lon_bounds = [-28.0, 28.0]
 # waypoints
 start_gps = Gps()
 bonus_gps = []
@@ -62,6 +65,8 @@ def write_to_file():
     for bp in bonus_gps:
         lines += [str(bp.latitude), str(bp.longitude)]
     lines += [str(goal_gps.latitude), str(goal_gps.longitude)]
+    # temp debugging print to console
+    print("Waypoints: ", lines)
     # write each row
     for row in lines:
         file1.write(",".join(row) + "\n")
@@ -75,26 +80,37 @@ def make_rel_gps(global_gps):
     return rel_m
 
 def arrived_at_point(point_gps):
-    if point_gps.latitude - robot_gps.latitude < error_margin_lat and point_gps.longitude - robot_gps.longitude < error_margin_lon:
+    if point_gps.latitude - kf_pos.latitude < error_margin_lat and point_gps.longitude - kf_pos.longitude < error_margin_lon:
         return True
     else:
         return False
 
-def check_in_bounds(robot_gps):
-    print("Robot GPS:[" + str(robot_gps.latitude) + "," + str(robot_gps.longitude) + "]")
-    x_bounds, y_bounds = [-15, 100], [-28, 28]
-    if (robot_gps.latitude < x_bounds[0] or 
-        robot_gps.latitude > x_bounds[1] or
-        robot_gps.longitude < y_bounds[0] or 
-        robot_gps.longitude > y_bounds[1]):
-        rospy.signal_shutdown("Robot went out of bounds")
-    return True
+def check_in_bounds(robot_pos):
+    if float(robot_pos.latitude) < lat_bounds[0]:
+        print("SHUTDOWN: OUT OF BOUNDS (lat low)")
+    elif float(robot_pos.latitude) > lat_bounds[1]:
+        print("SHUTDOWN: OUT OF BOUNDS (lat high)")
+    elif float(robot_pos.longitude) < lon_bounds[0]:
+        print("SHUTDOWN: OUT OF BOUNDS (lon low)")
+    elif float(robot_pos.longitude) > lon_bounds[1]:
+        print("SHUTDOWN: OUT OF BOUNDS (lon high)")
+    else:
+        return True
+    # we hit a fail case
+    rospy.signal_shutdown("Robot went out of bounds")
 
-def update_robot_gps(gps_reading):
-    global robot_gps, visited
-    robot_gps = gps_reading
+def get_kf_state(state_msg):
+    global State, kf_pos, visited
+    State = state_msg.data
+    kf_pos.latitude = State[0]
+    kf_pos.longitude = State[1]
+
+# def update_robot_gps(gps_reading):
+#     global robot_gps, visited
+#     robot_gps = gps_reading
+    print("KF Position:[" + str(kf_pos.latitude) + "," + str(kf_pos.longitude) + "]")
     # make sure the robot is still in bounds
-    check_in_bounds(make_rel_gps(robot_gps))
+    check_in_bounds(kf_pos)
     # check all the bonus waypoints to see if visited.
     # make sure the waypoints have been interpreted first.
     if wp_interpreted:
@@ -170,12 +186,6 @@ def update_heading(imu_data):
     current_heading.data = -yaw_rads
     hdg_pub.publish(current_heading)
 
-def get_kf_state(state_msg):
-    global State, kf_pos
-    State = state_msg.data
-    kf_pos.longitude = State[0]
-    kf_pos.latitude = State[1]
-
 def main():
     global loc_pub, hdg_pub, dist_pub
 
@@ -190,7 +200,7 @@ def main():
     dist_pub = rospy.Publisher("/swc/dist", Float32, queue_size=1)
 
     # subscribe to robot's current GPS position and IMU data
-    rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
+    #rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
     rospy.Subscriber("/sim/imu", Imu, update_heading, queue_size=1)
     # subscribe to KF State
     rospy.Subscriber("/kf/state", Float32MultiArray, get_kf_state, queue_size=1)

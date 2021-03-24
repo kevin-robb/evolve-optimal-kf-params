@@ -132,6 +132,9 @@ def measure():
         (cur_gps.longitude - start_gps.longitude) * lon_to_m,
         cur_vel[2] * cos(cur_hdg),
         -cur_vel[2] * sin(cur_hdg)]))
+    
+    # print the measured robot position
+    print("Measured Pos:[" + str(Z[0]) + "," + str(Z[1]) + "]")
 
 def update():
     global K, X, P
