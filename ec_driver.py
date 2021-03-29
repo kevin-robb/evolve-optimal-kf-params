@@ -41,9 +41,6 @@ def setup_dir() -> Tuple:
     # make a directory to store KF data, gen summaries, and plots.
     directory = "runs/run_" + run_id
     run_bash_cmd("mkdir " + directory)
-    #parent_dir = "/home/kevinrobb/capstone-kf-ml/runs/"
-    #path = path.join(parent_dir, directory) 
-    #mkdir(path)
     # create the summary file for this run and return the filepath.
     return directory, setup_summary_file(directory, run_id)
 
@@ -53,19 +50,7 @@ def set_kf_data_loc(directory:str, fname:str):
     if directory[-1] != "/": 
         directory += "/"
     file1 = open(filepath, "w")
-    row = directory + "," + fname
-    file1.write(row)
-    file1.close
-
-def set_genome_to_default():
-    # reset the genome to its default values so the KF can be run on its own if needed.
-    p_diag = [0.25, 0.25, 0.25, 0.5]
-    q_diag = [0.01, 0.01, 0.01, 0.01]
-    r_diag = [0.01, 0.01, 0.01, 0.01]
-    genome = p_diag + q_diag + r_diag
-    filepath = "config/genome.csv"
-    file1 = open(filepath, "w")
-    row = ",".join([str(item) for item in genome])
+    row = directory + fname
     file1.write(row)
     file1.close
 
@@ -119,11 +104,6 @@ def main():
     # after repeating for the desired number of generations, run our plotting script.
     run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + directory)
     # TODO also plot the best agent in the final generation using my previous in-depth script.
-
-    # reset the config file for the KF to use its default options.
-    set_kf_data_loc("kf_data/", "default")
-    set_genome_to_default()
-
 
 if __name__ == "__main__":
     main()

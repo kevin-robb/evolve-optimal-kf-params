@@ -72,7 +72,6 @@ state_pub = None
 # store data to be written to file
 data_for_file = []
 filepath = None
-filename = None
 
 ## Kalman Filter functions
 def initialize():
@@ -86,7 +85,7 @@ def initialize():
     # read in the genome we are using
     read_genome()
 
-    if filename is not None and cur_gps is not None and start_gps is not None and cur_hdg is not None:
+    if filepath is not None and cur_gps is not None and start_gps is not None and cur_hdg is not None:
         ## set initialized flag
         initialized = True
         ready_msg = Bool()
@@ -101,6 +100,7 @@ def read_genome():
     #filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/capstone/src/"
     file1 = open(filepath + "genome.csv", "r+")
     line = file1.readlines()[0]
+    file1.close()
     g = [float(g) for g in line.split(",")]
 
     # set everything that depends on the genome.
@@ -245,25 +245,23 @@ def mat_to_ls(mat):
 ## Save data to a file for evaluation
 def save_to_file():
     global data_for_file
-    if filename is None:
+    if filepath is None:
         return
     data_for_file.append(mat_to_ls(Z) + mat_to_ls(X_next) + mat_to_ls(X) + Truth + [cur_hdg])
-    np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
+    np.savetxt(filepath, data_for_file, delimiter=",")
 
 # read destination directory & filename from config.
 def set_filename():
-    global filepath, filename
-    path = "/home/"+getuser()+"/capstone-kf-ml/config/"
-    file1 = open(path + "kf_data_destination.csv", "r+")
-    line = file1.readlines()[0].split(",")
-    filepath = "/home/"+getuser()+"/capstone-kf-ml/" + line[0]
-    print("KF Data filename is " + line[1])
-    if line[1] == "default":
-        dt = datetime.now()
-        filename = "kf_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
-    else:
-        filename = line[1]
-    print("filepath is " + filepath + filename)
+    global filepath
+    gpath = "/home/"+getuser()+"/capstone-kf-ml/"
+    file1 = open(gpath + "config/kf_data_destination.csv", "r+")
+    filepath = gpath + file1.readline() + ".csv"
+    file1.close()
+    print("filepath is " + filepath)
+
+    # # create the file for the new KF data.
+    # file2 = open(filepath, "w+")
+    # file2.close()
 
 
 def main():

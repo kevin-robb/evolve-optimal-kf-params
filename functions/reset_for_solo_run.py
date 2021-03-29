@@ -2,6 +2,8 @@
 # Basically, this clears remnants of previous EC runs.
 
 from datetime import datetime
+from os import putenv
+import sys
 
 def set_genome_to_default():
     # reset the genome to its default values.
@@ -15,22 +17,24 @@ def set_genome_to_default():
     file1.write(row)
     file1.close
 
-def set_filepath_to_default() -> str:
+def set_filepath_to_default(fname:str):
     # set the KF data config to output to the default destination.
     filepath = "config/kf_data_destination.csv"
     file1 = open(filepath, "w")
-    # make the filename to return
-    dt = datetime.now()
-    fname = "kf_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
+    # make the filename to return.
+    #dt = datetime.now()
+    #fname = "kf_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
     row = "kf_data/" + fname
-    #row = "kf_data/,default"
     file1.write(row)
     file1.close
-    return fname
 
 def main():
+    # receive the filename to use.
+    fname = sys.argv[1]
     set_genome_to_default()
-    return set_filepath_to_default()
+    set_filepath_to_default(fname)
+    # let the bash script know the filename so it can plot the data.
+    #putenv("FNAME", fname)
 
 if __name__ == "__main__":
     main()
