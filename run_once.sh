@@ -5,15 +5,14 @@
 ARG=${1:-empty}
 DEF="default"
 
-# grab the epoch datetime to use as a uniform filename in the default case.
-FNAME=`date +%s`
-echo "FNAME is: ${FNAME}"
-
 # make sure we have sourced the right ros workspace.
 source sim_ws/devel/setup.bash
 
 if [ "$ARG" = "$DEF" ]; then
     echo "Using default KF settings."
+    # grab the epoch datetime to use as a uniform filename in the default case.
+    FNAME=`date +%s`
+    echo "FNAME is: ${FNAME}"
     # make sure the KF uses its default parameters.
     python3 functions/reset_for_solo_run.py $FNAME
 fi

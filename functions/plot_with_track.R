@@ -14,17 +14,27 @@ plot_with_track <- function(filename, dirpath, plot_hdg=FALSE) {
   library(gridExtra)
   library(cowplot)
 
-  # get the waypoints
-  wp_path = "./config/waypoints.csv"
-  wp_df=read.csv(wp_path)
+  # get the waypoints (TODO this was causing errors, need to fix)
+  # wp_path = "./config/waypoints.csv"
+  # wp_df=read.csv(wp_path)
   
   # read in the data from the file
   filepath = paste("./", dirpath, "/", filename, ".csv", sep="")
   df=read.csv(filepath)
-  # map to meas (4d), pred (4d), state (4d), truth (5d), cur_hdg (1d)
-  names(df) <- c("x_meas","y_meas","xdot_meas","ydot_meas","x_pred","y_pred","xdot_pred","ydot_pred","x_state","y_state","xdot_state","ydot_state","x_true","y_true","xdot_true","ydot_true","vel_true","cur_hdg")# add a timestep independent variable
+
+  # data file has 18 columns, (will be 19 when timestep is added)
+  # meas (4d), pred (4d), state (4d), truth (5d), cur_hdg (1d)
+  meas_names <- c("x_meas","y_meas","xdot_meas","ydot_meas")
+  pred_names <- c("x_pred","y_pred","xdot_pred","ydot_pred")
+  state_names <- c("x_state","y_state","xdot_state","ydot_state")
+  truth_names <- c("x_true","y_true","xdot_true","ydot_true","vel_true")
+  yaw_name <- c("cur_hdg")
+  names(df) <- c(meas_names, pred_names, state_names, truth_names, yaw_name)
+
+  # add a timestep independent variable
   t = c(1:length(df$x_meas))
   df <- cbind(t, df)
+  
   #head(df)
   
   # change the names of df_x since they will be used for the legend
@@ -112,7 +122,7 @@ plot_with_track <- function(filename, dirpath, plot_hdg=FALSE) {
   # set plot location
   if (dirpath == "kf_data") {
     # default option
-    plot_path = paste("./kf_plots/", filename, "_track", ".png", sep="")
+    plot_path = paste("./kf_plots/", filename, ".png", sep="")
   } else {
     # write the plots to the same file the data came from
     plot_path = paste("./", dirpath, "/", filename, ".png", sep="")

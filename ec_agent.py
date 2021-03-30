@@ -34,7 +34,7 @@ class Agent:
     # mutate the genome of this agent.
     def mutate(self):
         # choose a gene to mutate.
-        gene = randint(0,len(self.genome))
+        gene = randint(0,len(self.genome)-1)
         # choose the amount to mutate (gaussian, mean 0, std dev 0.1) and do it.
         # make sure it is positive, and that the value doesn't drop too close to 0.
         self.genome[gene] = min(abs(self.genome[gene] + normal(loc=0, scale=0.01)), 0.005)
@@ -43,11 +43,12 @@ class Agent:
     def crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
         # decide which genes will be taken from which parent.
         new_genome = [self.genome[gene] if randint(0,1) < 1 else other_parent.genome[gene] for gene in range(len(self.genome))]
-        child = Agent(new_genome, next_id[0], self.gen_num+1)
+        child = Agent(id=next_id[0], genome=new_genome, gen_num=self.gen_num+1)
         next_id[0] += 1
         child.mutate()
         return child
     
+    # TODO fix error in here. (saying self.genome is int in mutate())
     # perform crossover, but do not separate groups of genes belonging to the same matrix.
     def group_crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
         # arbitrarily take gene groups from one parent each.
@@ -57,7 +58,7 @@ class Agent:
         new_r = self.genome[8:12] if selections[2] else other_parent.genome[8:12]
         new_genome = new_p + new_q + new_r
         # make the new child and mutate it.
-        child = Agent(new_genome, next_id[0], self.gen_num+1)
+        child = Agent(id=next_id[0], genome=new_genome, gen_num=self.gen_num+1)
         next_id[0] += 1
         child.mutate()
         return child

@@ -6,6 +6,7 @@ from typing import List, Tuple
 from random import choices
 from datetime import datetime
 import subprocess
+import sys
 #from os import path, mkdir
 
 def initialize_agents(roster_size:int, next_id:List[int]) -> List:
@@ -23,7 +24,7 @@ def next_generation(roster:List, next_id:List[int]) -> List:
     # select double what is needed to parent the next generation. (agents can/will be multi-selected)
     parents = choices(roster, weights=r_weights, k=2*len(roster))
     # create the next generation by crossing over pairs of parents.
-    next_gen = [parents[i].group_crossover(parents[i + len(roster)], next_id) for i in range(len(roster))]
+    next_gen = [parents[i].crossover(parents[i + len(roster)], next_id) for i in range(len(roster))]
     return next_gen
 
 def setup_summary_file(directory:str, run_id:str) -> str:
@@ -65,12 +66,19 @@ def set_kf_data_loc(directory:str, fname:str):
 
 def run_bash_cmd(command:str):
     # run something on the command line.
-    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE) #cwd='path\to\somewhere'
+    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
     
 def main():
-    # size of each gen, # of gens to run.
-    gen_size, gen_max = 5, 3
+    # set parameters from cmd line args.
+    if len(sys.argv) > 1:
+        # number of agents in a generation.
+        gen_size = int(sys.argv[1])
+        # number of generations to run.
+        num_gens = int(sys.argv[2])
+    else:
+        # default values.
+        gen_size, num_gens = 3, 3
     # create the folder/file we will use for this run's data.
     directory, summary_filepath = setup_dir()
     # ensure each agent gets a different ID. 
@@ -80,7 +88,7 @@ def main():
     roster = initialize_agents(gen_size, next_id)
 
     # run the sim for each agent to obtain fitness for each.
-    while roster[0].gen_num <= gen_max:
+    while roster[0].gen_num <= num_gens:
         # TODO look into using the same seed for agents in the same generation.
         for agent in roster:
             # set the KF to use this agent's genome params.
@@ -103,7 +111,8 @@ def main():
 
     # after repeating for the desired number of generations, run our plotting script.
     run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + directory)
-    # TODO also plot the best agent in the final generation using my previous in-depth script.
+
+    # TODO make individual plots for comparison with best/worst/avg agents in first/mid/final gen.
 
 if __name__ == "__main__":
     main()
