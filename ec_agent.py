@@ -71,7 +71,7 @@ class Agent:
             # if this is a new file, we have a problem.
             raise Exception ("File does not exist for " + filepath)
         # add the row for this round of results
-        row = ",".join([str(self.gen_num)] + [str(g) for g in self.genome] + [str(self.fitness)])
+        row = ",".join([str(self.id),str(self.gen_num)] + [str(g) for g in self.genome] + [str(self.fitness)])
         file1.write(row + "\n")
         file1.close()
 

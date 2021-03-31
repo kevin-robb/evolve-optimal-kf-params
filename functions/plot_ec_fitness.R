@@ -11,13 +11,20 @@ plot_ec_fitness <- function(dirpath, png=TRUE) {
   
   # read in the data from the file. first line is header.
   filepath = paste("./", dirpath, "/summary.csv", sep="")
-  df=read.csv(filepath)
+  df=read.csv(filepath, header=TRUE)
+  # set first row as column names, then remove it.
+  #names(df) <- as.matrix(df[1, ])
+  #df <- df[-1, ]
+  #df[] <- lapply(df, function(x) type.convert(as.character(x)))
 
-  #head(df)
+  head(df)
+  
+  # subset it using melt
+  #df = melt(df[,c(2,15)], id=c("generation_number"))
   
   # define the plot. use only generation # and fitness.
   #df_subset = melt(df[,c(1,14)], id=c("generation_number"))
-  p <- ggplot(df) + geom_point(aes(generation_number,fitness),color="blue") +
+  p <- ggplot(df) + geom_point(aes(as.numeric(generation_number),as.numeric(fitness)),color="blue") +
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("Fitness Distribution For Each Generation") + 
     cowplot::theme_minimal_grid(12) +

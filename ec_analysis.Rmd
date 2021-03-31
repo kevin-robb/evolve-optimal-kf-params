@@ -13,6 +13,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 source("functions/plot_ec_fitness.R")
-fname = "ec_2021-03-08-18-23-03"
-plot_ec_fitness(filename=fname,png=TRUE)
+dname = "runs/run_2021-03-29-21-42-59"
+plot_ec_fitness(dirpath=dname,png=FALSE)
 ```
+
+
+# error checking
+```{r}
+rlang::last_error()
+#rlang::last_trace()
+```
+
