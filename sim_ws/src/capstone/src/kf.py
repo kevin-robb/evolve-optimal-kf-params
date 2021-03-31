@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import rospy
-from std_msgs.msg import Float32, Float32MultiArray, String
+import rospy, sys
+from std_msgs.msg import Float32, Float32MultiArray, Bool
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
 from math import sin, cos, degrees
@@ -46,20 +46,17 @@ X_next = np.transpose(np.matrix([0,0,0,0])) # prediction for next
 F = np.matrix([[1,0,timer_period,0],[0,1,0,timer_period],[0,0,1,0],[0,0,0,1]])
 F_trans = np.transpose(F)
 # Covariance Matrix (initial) (4x4)
-#P = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
-#P_next = np.matrix([[25,0,0,0],[0,25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
-# artificially make it smaller for now to try and fix exponential growth
-P = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
-P_next = np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
+P = None #np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # current
+P_next = None #np.matrix([[0.25,0,0,0],[0,0.25,0,0],[0,0,1/4,0],[0,0,0,1/2]]) # prediction for next
 # Measurements (initial) (4D column vector)
 Z = np.transpose(np.matrix([0,0,0,0]))
 # Observation Matrix (static) (4x4)
 H = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 H_trans = np.transpose(H)
 # Process noise, Q (4x4)
-Q = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
+Q = None #np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
 # Measurement Uncertainty, R (4x4)
-R = np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
+R = None #np.matrix([[0.01,0,0,0],[0,0.01,0,0],[0,0,0.01,0],[0,0,0,0.01]])
 # Identity matrix in 4D
 I = np.matrix([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
@@ -70,12 +67,11 @@ initialized = False
 Truth = [0,0,0,0,0]
 
 ## Publishers
+ready_pub = None
 state_pub = None
 # store data to be written to file
 data_for_file = []
-filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
-filename = None
-filename_pub = None
+filepath = None
 
 ## Kalman Filter functions
 def initialize():
@@ -86,10 +82,32 @@ def initialize():
     ## set system state initial guess
     # already done above
 
-    if filename is not None and cur_gps is not None and start_gps is not None and cur_hdg is not None:
+    # read in the genome we are using
+    read_genome()
+
+    if filepath is not None and cur_gps is not None and start_gps is not None and cur_hdg is not None:
         ## set initialized flag
         initialized = True
+        ready_msg = Bool()
+        ready_msg.data = True
+        ready_pub.publish(ready_msg)
         print("initialized KF")
+
+# read the genome from the file to set KF params.
+def read_genome():
+    global P, P_next, Q, R
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/config/"
+    #filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/capstone/src/"
+    file1 = open(filepath + "genome.csv", "r+")
+    line = file1.readlines()[0]
+    file1.close()
+    g = [float(g) for g in line.split(",")]
+
+    # set everything that depends on the genome.
+    P = np.matrix([[g[0],0,0,0],[0,g[1],0,0],[0,0,g[2],0],[0,0,0,g[3]]])
+    P_next = P
+    Q = np.matrix([[g[4],0,0,0],[0,g[5],0,0],[0,0,g[6],0],[0,0,0,g[7]]])
+    R = np.matrix([[g[8],0,0,0],[0,g[9],0,0],[0,0,g[10],0],[0,0,0,g[11]]])
 
 def predict():
     global X_next, P_next
@@ -114,6 +132,9 @@ def measure():
         (cur_gps.longitude - start_gps.longitude) * lon_to_m,
         cur_vel[2] * cos(cur_hdg),
         -cur_vel[2] * sin(cur_hdg)]))
+    
+    # print the measured robot position
+    print("Measured Pos:[" + str(Z[0]) + "," + str(Z[1]) + "]")
 
 def update():
     global K, X, P
@@ -224,37 +245,32 @@ def mat_to_ls(mat):
 ## Save data to a file for evaluation
 def save_to_file():
     global data_for_file
-    if filename is None:
+    if filepath is None:
         return
     data_for_file.append(mat_to_ls(Z) + mat_to_ls(X_next) + mat_to_ls(X) + Truth + [cur_hdg])
-    np.savetxt(filepath + filename + ".csv", data_for_file, delimiter=",")
+    np.savetxt(filepath, data_for_file, delimiter=",")
 
+# read destination directory & filename from config.
 def set_filename():
-    global filename
-    # use datetime to ensure unique filenames
-    dt = datetime.now()
-    # filename will specify: (MANUALLY CHANGE THESE WHEN CHANGING SIM SETTINGS)
-    #  obstacles (0,1=normal,2=hard)
-    obstacles = 0
-    #  noise (0,1=reduced,2=realistic)
-    noise = 2
-    filename = "kf_o" + str(obstacles) + "_n" + str(noise) + "_" + dt.strftime("%Y-%m-%d-%H-%M-%S")
-    print("filename is " + filename)
-    # publish the filename so our waypoints can be written to a file and referenced if needed
-    # fname_msg = String()
-    # fname_msg.data = filename
-    # cur_time = time.time()
-    # while(time.time() - cur_time < 3):
-    #     filename_pub.publish(fname_msg)
-    # print("sent the filename!")
+    global filepath
+    gpath = "/home/"+getuser()+"/capstone-kf-ml/"
+    file1 = open(gpath + "config/kf_data_destination.csv", "r+")
+    filepath = gpath + file1.readline() + ".csv"
+    file1.close()
+    print("filepath is " + filepath)
+
+    # # create the file for the new KF data.
+    # file2 = open(filepath, "w+")
+    # file2.close()
+
 
 def main():
-    global state_pub, data_for_file, filename_pub
+    global state_pub, data_for_file, ready_pub
     # initalize the node in ROS
     rospy.init_node('kf_node')
     data_for_file = []
-    # create the filename
-    #filename_pub = rospy.Publisher("/kf/filename", String, queue_size=1)
+
+    # use config data to set the filepath for data output
     set_filename()
 
     ## Subscribe to Sensor Values
@@ -274,6 +290,8 @@ def main():
 
     # publish the KF state for the localization to use
     state_pub = rospy.Publisher("/kf/state", Float32MultiArray, queue_size=1)
+    # publish a go-ahead signal for the control node to have it wait til the KF is ready
+    ready_pub = rospy.Publisher("/kf/ready", Bool, queue_size=1)
     
     # create timer with a period of 0.1 (10 Hz)
     rospy.Timer(rospy.Duration(timer_period), timer_callback)

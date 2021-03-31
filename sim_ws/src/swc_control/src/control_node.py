@@ -9,6 +9,7 @@ from sensor_msgs.msg import LaserScan
 
 control_pub = None
 initialized = False
+kf_init = False
 # ignore obstacles farther away than clearance
 clearance = 1.5
 # desired turn angle to target
@@ -49,7 +50,7 @@ def get_laserscan(laserscan):
 def get_turn_angle(turn):
     global angle_to_target, initialized
     angle_to_target = int(degrees(turn.data)) # turn.data is in radians
-    initialized = True
+    initialized = kf_init
 
 def get_dist_to_target(dist):
     global dist_to_target
@@ -115,6 +116,10 @@ def timer_callback(event):
             control_msg.speed *= -1
         control_pub.publish(control_msg)
 
+def init_kf(ready_msg):
+    global kf_init
+    kf_init = True
+
 def main():
     global control_pub
 
@@ -132,6 +137,8 @@ def main():
     rospy.Subscriber("/scan", LaserScan, get_laserscan, queue_size=1)
     # subscribe to the distance to the current target waypoint
     rospy.Subscriber("/swc/dist", Float32, get_dist_to_target, queue_size=1)
+    # receive a ready message from the KF so we can start
+    rospy.Subscriber("kf/ready", Bool, init_kf, queue_size=1)
     
     # Create a timer that calls timer_callback() with a period of 0.1 (10 Hz)
     rospy.Timer(rospy.Duration(0.1), timer_callback)

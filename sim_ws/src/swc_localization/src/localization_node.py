@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 
 import rospy
-from math import sqrt#, pi
+from math import sqrt
+from getpass import getuser
 from tf import transformations
 from std_msgs.msg import Float32, Float32MultiArray, Bool #, String
 from sensor_msgs.msg import Imu
 from swc_msgs.msg import Gps
 from swc_msgs.srv import Waypoints
-# import numpy as np
-# from getpass import getuser
-# import time
 
 # publishers
 loc_pub = None
 hdg_pub = None
 dist_pub = None
 # robot's current GPS location
-robot_gps = Gps()
+#robot_gps = Gps()
+# boundaries. if the robot goes out, kill ROS
+lat_bounds = [-15.0, 100.0]
+lon_bounds = [-28.0, 28.0]
 # waypoints
 start_gps = Gps()
 bonus_gps = []
@@ -49,16 +50,27 @@ def interpret_waypoints(waypoints):
     visited = [False, False, False]
     wp_interpreted = True
     print("waypoints interpreted")
-    # # wait until the filename is received to attempt writing to a file
-    # cur_time = time.time()
-    # while(time.time() - cur_time < 1):
-    #     pass
-    # save_wpts_to_file()
+    # save waypoints to file
+    write_to_file()
 
-    # tell the check_for_shutdown node that we have started
-    init_msg = Bool()
-    init_msg.data = True
-    init_pub.publish(init_msg)
+# write the waypoints to a file for use in plotting later.
+def write_to_file():
+    print("Writing waypoints to file")
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/config/"
+    #filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/swc_localization/src/"
+    # want to replace the previous waypoints (w=write).
+    file1 = open(filepath + "waypoints.csv", "w+")
+    # grab the waypoints already turned to meters.
+    lines = [["x","y"],["0.0","0.0"]]
+    for bp in bonus_gps:
+        lines += [str(bp.latitude), str(bp.longitude)]
+    lines += [str(goal_gps.latitude), str(goal_gps.longitude)]
+    # temp debugging print to console
+    print("Waypoints: ", lines)
+    # write each row
+    for row in lines:
+        file1.write(",".join(row) + "\n")
+    file1.close()
 
 def make_rel_gps(global_gps):
     # transform a GPS waypoint from global GPS to meters relative to start
@@ -68,14 +80,37 @@ def make_rel_gps(global_gps):
     return rel_m
 
 def arrived_at_point(point_gps):
-    if point_gps.latitude - robot_gps.latitude < error_margin_lat and point_gps.longitude - robot_gps.longitude < error_margin_lon:
+    if point_gps.latitude - kf_pos.latitude < error_margin_lat and point_gps.longitude - kf_pos.longitude < error_margin_lon:
         return True
     else:
         return False
 
-def update_robot_gps(gps_reading):
-    global robot_gps, visited
-    robot_gps = gps_reading
+def check_in_bounds(robot_pos):
+    if float(robot_pos.latitude) < lat_bounds[0]:
+        print("SHUTDOWN: OUT OF BOUNDS (lat low)")
+    elif float(robot_pos.latitude) > lat_bounds[1]:
+        print("SHUTDOWN: OUT OF BOUNDS (lat high)")
+    elif float(robot_pos.longitude) < lon_bounds[0]:
+        print("SHUTDOWN: OUT OF BOUNDS (lon low)")
+    elif float(robot_pos.longitude) > lon_bounds[1]:
+        print("SHUTDOWN: OUT OF BOUNDS (lon high)")
+    else:
+        return True
+    # we hit a fail case
+    rospy.signal_shutdown("Robot went out of bounds")
+
+def get_kf_state(state_msg):
+    global State, kf_pos, visited
+    State = state_msg.data
+    kf_pos.latitude = State[0]
+    kf_pos.longitude = State[1]
+
+# def update_robot_gps(gps_reading):
+#     global robot_gps, visited
+#     robot_gps = gps_reading
+    print("KF Position:[" + str(kf_pos.latitude) + "," + str(kf_pos.longitude) + "]")
+    # make sure the robot is still in bounds
+    check_in_bounds(kf_pos)
     # check all the bonus waypoints to see if visited.
     # make sure the waypoints have been interpreted first.
     if wp_interpreted:
@@ -151,31 +186,11 @@ def update_heading(imu_data):
     current_heading.data = -yaw_rads
     hdg_pub.publish(current_heading)
 
-def get_kf_state(state_msg):
-    global State, kf_pos
-    State = state_msg.data
-    kf_pos.longitude = State[0]
-    kf_pos.latitude = State[1]
-
-# def save_wpts_to_file():
-#     print("save_wpts_to_file was called!")
-#     # is called when waypoints have been processed
-#     data_for_file = [[bonus_gps[i].latitude, bonus_gps[i].longitude] for i in range(len(bonus_gps))]
-#     data_for_file.append([goal_gps.latitide, goal_gps.longitude])
-#     filepath = "/home/"+getuser()+"/capstone-kf-ml/data/"
-#     np.savetxt(filepath + "wp_" + filename + ".csv", data_for_file, delimiter=",")
-#     print("saved waypoints to a file!")
-
-# def get_filename(str_msg):
-#     global filename
-#     filename = str_msg.data
-#     print("received the filename!")
-
 def main():
-    global loc_pub, hdg_pub, dist_pub, init_pub
+    global loc_pub, hdg_pub, dist_pub
 
     # Initalize our node in ROS
-    rospy.init_node('localization_node')
+    rospy.init_node('localization_node', disable_signals=True)
 
     # publish target point location relative to robot's current position
     loc_pub = rospy.Publisher("/swc/goal", Gps, queue_size=1)
@@ -183,16 +198,12 @@ def main():
     hdg_pub = rospy.Publisher("/swc/current_heading", Float32, queue_size=1)
     # publish distance to current target waypoint
     dist_pub = rospy.Publisher("/swc/dist", Float32, queue_size=1)
-    # publish True to tell the shutdown node that we have started
-    init_pub = rospy.Publisher("/swc/init", Bool, queue_size=1)
 
     # subscribe to robot's current GPS position and IMU data
-    rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
+    #rospy.Subscriber("/sim/gps", Gps, update_robot_gps, queue_size=1)
     rospy.Subscriber("/sim/imu", Imu, update_heading, queue_size=1)
     # subscribe to KF State
     rospy.Subscriber("/kf/state", Float32MultiArray, get_kf_state, queue_size=1)
-    # subscribe to KF data filename so we can write the waypoints to a file of the same name
-    #rospy.Subscriber("/kf/filename", String, get_filename, queue_size=1)
 
     # Wait for Waypoints service and then request waypoints
     rospy.wait_for_service('/sim/waypoints')
