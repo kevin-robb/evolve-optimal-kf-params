@@ -77,8 +77,13 @@ def main():
         # number of generations to run.
         num_gens = int(sys.argv[2])
     else:
-        # default values.
-        gen_size, num_gens = 3, 3
+        # ask to input them (probably I just forgot).
+        gen_size = int(input("Enter number of agents per gen: "))
+        num_gens = int(input("Enter number of generations to run: "))
+        # see if they skipped this, and use default values if so.
+        if gen_size is None or num_gens is None:
+            gen_size, num_gens = 3, 3
+            
     # create the folder/file we will use for this run's data.
     directory, summary_filepath = setup_dir()
     # ensure each agent gets a different ID. 
