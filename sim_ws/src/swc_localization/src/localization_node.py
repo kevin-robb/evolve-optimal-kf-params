@@ -61,15 +61,12 @@ def write_to_file():
     # want to replace the previous waypoints (w=write).
     file1 = open(filepath + "waypoints.csv", "w+")
     # grab the waypoints already turned to meters.
-    lines = [["x","y"],["0.0","0.0"]]
+    lines = "x,y\n0.0,0.0\n"
     for bp in bonus_gps:
-        lines += [str(bp.latitude), str(bp.longitude)]
-    lines += [str(goal_gps.latitude), str(goal_gps.longitude)]
-    # temp debugging print to console
-    print("Waypoints: ", lines)
-    # write each row
-    for row in lines:
-        file1.write(",".join(row) + "\n")
+        lines += str(bp.latitude) + "," + str(bp.longitude) + "\n"
+    lines += str(goal_gps.latitude) + "," + str(goal_gps.longitude) + "\n"
+    #print("Waypoints: ", lines)
+    file1.write(lines)
     file1.close()
 
 def make_rel_gps(global_gps):

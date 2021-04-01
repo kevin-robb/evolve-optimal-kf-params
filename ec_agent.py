@@ -5,15 +5,6 @@ from os import stat
 from numpy.random import normal
 
 class Agent:
-    # Genome:
-    # - diagonal entries of P_init (covariance)
-    # - diagonal entries of Q (process noise)
-    # - diagonal entries of R (measurement uncertainty)
-    p_diag = [0.25, 0.25, 0.25, 0.5]
-    q_diag = [0.01, 0.01, 0.01, 0.01]
-    r_diag = [0.01, 0.01, 0.01, 0.01]
-    genome_init = p_diag + q_diag + r_diag
-
     # instantiate an agent, either with the default genome or a given one.
     def __init__(self, id:int, genome:List[float] = None, gen_num:int = 1):
         self.id = id
@@ -23,8 +14,15 @@ class Agent:
         if genome is not None:
             self.genome = genome
         else:
-            self.genome = self.genome_init
+            self.init_genome()
             self.randomize_genome()
+    
+    # grab the default genome values from the config file.
+    def init_genome(self):
+        filepath = "config/default_genome.csv"
+        file3 = open(filepath, "r")
+        self.genome = [float(g) for g in file3.readline().split(",")]
+        file3.close()
     
     # randomize the genome for the first generation.
     def randomize_genome(self):
@@ -47,21 +45,20 @@ class Agent:
         next_id[0] += 1
         child.mutate()
         return child
-    
-    # TODO fix error in here. (saying self.genome is int in mutate())
-    # perform crossover, but do not separate groups of genes belonging to the same matrix.
-    def group_crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
-        # arbitrarily take gene groups from one parent each.
-        selections = [choice([True, False]) for i in range(3)]
-        new_p = self.genome[0:4] if selections[0] else other_parent.genome[0:4]
-        new_q = self.genome[4:8] if selections[1] else other_parent.genome[4:8]
-        new_r = self.genome[8:12] if selections[2] else other_parent.genome[8:12]
-        new_genome = new_p + new_q + new_r
-        # make the new child and mutate it.
-        child = Agent(id=next_id[0], genome=new_genome, gen_num=self.gen_num+1)
-        next_id[0] += 1
-        child.mutate()
-        return child
+
+    # # perform crossover, but do not separate groups of genes belonging to the same matrix.
+    # def group_crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
+    #     # arbitrarily take gene groups from one parent each.
+    #     selections = [choice([True, False]) for i in range(3)]
+    #     new_p = self.genome[0:4] if selections[0] else other_parent.genome[0:4]
+    #     new_q = self.genome[4:8] if selections[1] else other_parent.genome[4:8]
+    #     new_r = self.genome[8:12] if selections[2] else other_parent.genome[8:12]
+    #     new_genome = new_p + new_q + new_r
+    #     # make the new child and mutate it.
+    #     child = Agent(id=next_id[0], genome=new_genome, gen_num=self.gen_num+1)
+    #     next_id[0] += 1
+    #     child.mutate()
+    #     return child
 
     # write this agent to the file.
     def write_to_file(self, filepath:str):

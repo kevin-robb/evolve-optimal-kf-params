@@ -32,7 +32,7 @@ plot_ec_fitness <- function(dirpath, png=TRUE) {
     theme(plot.title = element_text(size=12)) + 
     theme(legend.position="none") + 
     ylab("Fitness (Lower is Better)") + xlab("Generation") +
-    ylim(c(0,500)) + #ylim(c(0,max(df->fitness))) +
+    ylim(c(0,max(df->fitness))) + #ylim(c(0,500)) + 
     # set x axis labels to integers only
     scale_x_continuous(breaks=c(1,2,3,4,5))
   

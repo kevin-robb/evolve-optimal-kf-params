@@ -7,10 +7,16 @@ import sys
 
 def set_genome_to_default():
     # reset the genome to its default values.
-    p_diag = [0.25, 0.25, 0.25, 0.5]
-    q_diag = [0.01, 0.01, 0.01, 0.01]
-    r_diag = [0.01, 0.01, 0.01, 0.01]
-    genome = p_diag + q_diag + r_diag
+    filepath = "config/default_genome.csv"
+    file3 = open(filepath, "r")
+    genome = [float(g) for g in file3.readline().split(",")]
+    file3.close()
+
+    # p_diag = [0.25, 0.25, 0.25, 0.5]
+    # q_diag = [0.01, 0.01, 0.01, 0.01]
+    # r_diag = [0.01, 0.01, 0.01, 0.01]
+    # control_params = [0.5, 5.0, 0.3]
+    # genome = p_diag + q_diag + r_diag + control_params
     filepath = "config/genome.csv"
     file1 = open(filepath, "w")
     row = ",".join([str(item) for item in genome])

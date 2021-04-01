@@ -6,6 +6,7 @@ from math import degrees
 from std_msgs.msg import Float32, Bool
 from swc_msgs.msg import Control
 from sensor_msgs.msg import LaserScan
+from getpass import getuser
 
 control_pub = None
 initialized = False
@@ -19,6 +20,11 @@ dist_to_target = 100
 bumped = False
 almost_bumped = False
 turn_dir = 0 # -1 = left, 1 = right, 0 = undecided
+
+# values set by the EC agent's genome
+shift = None #0.5
+scale = None #5.0
+P = None #0.3
 
 def get_bump_status(bump_status):
     global bumped, turn_dir
@@ -100,12 +106,13 @@ def timer_callback(event):
         #print("no obstructions")
         # no obstacles in the way. pursue angle to next waypoint
         # modulate speed based on angle
-        control_msg.speed = 5 * (1 - abs(angle_to_target)/30)**5 + 0.5
+        #control_msg.speed = 5 * (1 - abs(angle_to_target)/30)**5 + 0.5
+        control_msg.speed = scale * (1 - abs(angle_to_target)/30)**5 + shift
         # reduce oscillations with a P-controller
-        P = 0.3
-        # if we are very close to a waypoint, don't clamp the angle as much (prevent missing)
-        if dist_to_target < 6:
-            P = 0.6
+        #P = 0.3
+        ## if we are very close to a waypoint, don't clamp the angle as much (prevent missing)
+        #if dist_to_target < 6:
+        #    P = 0.6
         control_msg.turn_angle = angle_to_target * P
         # correct for really big turns (unlikely)
         if control_msg.turn_angle < -90:
@@ -118,7 +125,21 @@ def timer_callback(event):
 
 def init_kf(ready_msg):
     global kf_init
+    read_genome()
     kf_init = True
+
+# read the genome from the file to set motion shift & scale params.
+def read_genome():
+    global shift, scale, P
+    filepath = "/home/"+getuser()+"/capstone-kf-ml/config/"
+    #filepath = "/home/"+getuser()+"/capstone-kf-ml/sim_ws/src/capstone/src/"
+    file1 = open(filepath + "genome.csv", "r+")
+    line = file1.readlines()[0]
+    file1.close()
+    g = [float(g) for g in line.split(",")]
+
+    # the first 12 entries are for the KF, so ignore them here.
+    shift, scale, P = g[12], g[13], g[14]
 
 def main():
     global control_pub
