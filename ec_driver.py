@@ -102,7 +102,7 @@ def main():
             agent_filename = "kf_output_" + str(agent.id)
             set_kf_data_loc(directory, agent_filename)
             # call the bash script to run the sim.
-            run_bash_cmd("bash run_once.sh")
+            run_bash_cmd("bash run_once.sh nondefault")
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
             agent.fitness = agent.results["Score"]
