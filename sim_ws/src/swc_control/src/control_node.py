@@ -108,6 +108,7 @@ def timer_callback(event):
         # modulate speed based on angle
         #control_msg.speed = 5 * (1 - abs(angle_to_target)/30)**5 + 0.5
         control_msg.speed = scale * (1 - abs(angle_to_target)/30)**5 + shift
+        print("Control Node: Setting speed: " + str(control_msg.speed))
         # reduce oscillations with a P-controller
         #P = 0.3
         ## if we are very close to a waypoint, don't clamp the angle as much (prevent missing)
@@ -125,6 +126,7 @@ def timer_callback(event):
 
 def init_kf(ready_msg):
     global kf_init
+    #print("Control Node: Received KF_INIT.")
     read_genome()
     kf_init = True
 
@@ -140,6 +142,7 @@ def read_genome():
 
     # the first 12 entries are for the KF, so ignore them here.
     shift, scale, P = g[12], g[13], g[14]
+    #print("Control Node: got genome values " + str(shift) + "," + str(scale) + "," + str(P))
 
 def main():
     global control_pub

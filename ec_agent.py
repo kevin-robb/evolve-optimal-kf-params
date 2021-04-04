@@ -27,7 +27,7 @@ class Agent:
     # randomize the genome for the first generation.
     def randomize_genome(self):
         # use a gaussian w/ mean 0 and std dev 0.1 to change each gene.
-        self.genome = [min(abs(g + normal(loc=0, scale=0.01)), 0.005) for g in self.genome]
+        self.genome = [max(abs(g + normal(loc=0, scale=0.01)), 0.005) for g in self.genome]
 
     # mutate the genome of this agent.
     def mutate(self):
@@ -35,7 +35,7 @@ class Agent:
         gene = randint(0,len(self.genome)-1)
         # choose the amount to mutate (gaussian, mean 0, std dev 0.1) and do it.
         # make sure it is positive, and that the value doesn't drop too close to 0.
-        self.genome[gene] = min(abs(self.genome[gene] + normal(loc=0, scale=0.01)), 0.005)
+        self.genome[gene] = max(abs(self.genome[gene] + normal(loc=0, scale=0.01)), 0.005)
 
     # cross the genes of this agent with another to produce a child.
     def crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
