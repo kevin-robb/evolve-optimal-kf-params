@@ -9,7 +9,7 @@ def set_genome_to_default():
     # reset the genome to its default values.
     filepath = "config/default_genome.csv"
     file3 = open(filepath, "r")
-    genome = [float(g) for g in file3.readline().split(",")]
+    genome = [float(g) for g in file3.readlines()[1].split(",")]
     file3.close()
 
     # p_diag = [0.25, 0.25, 0.25, 0.5]

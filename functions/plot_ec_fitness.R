@@ -12,18 +12,11 @@ plot_ec_fitness <- function(dirpath, png=TRUE) {
   # read in the data from the file. first line is header.
   filepath = paste("./", dirpath, "/summary.csv", sep="")
   df=read.csv(filepath, header=TRUE)
-  # set first row as column names, then remove it.
-  #names(df) <- as.matrix(df[1, ])
-  #df <- df[-1, ]
-  #df[] <- lapply(df, function(x) type.convert(as.character(x)))
 
-  head(df)
-  
-  # subset it using melt
-  #df = melt(df[,c(2,15)], id=c("generation_number"))
+  # the highest gen_num will be the max on the x-axis.
+  max_gen = tail(df$generation_number)
   
   # define the plot. use only generation # and fitness.
-  #df_subset = melt(df[,c(1,14)], id=c("generation_number"))
   p <- ggplot(df) + geom_point(aes(as.numeric(generation_number),as.numeric(fitness)),color="blue") +
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("Fitness Distribution For Each Generation") + 
@@ -34,7 +27,7 @@ plot_ec_fitness <- function(dirpath, png=TRUE) {
     ylab("Fitness (Lower is Better)") + xlab("Generation") +
     ylim(c(0,max(df->fitness))) + #ylim(c(0,500)) + 
     # set x axis labels to integers only
-    scale_x_continuous(breaks=c(1,2,3,4,5))
+    scale_x_continuous(breaks=integer_breaks(max_gen))
   
   # write the plot to a file.
   if (png == TRUE) {
@@ -44,4 +37,15 @@ plot_ec_fitness <- function(dirpath, png=TRUE) {
     p
   }
   
+}
+
+# A function factory for getting integer y-axis values.
+# https://www.r-bloggers.com/2019/11/setting-axes-to-integer-values-in-ggplot2/
+integer_breaks <- function(n = 5, ...) {
+fxn <- function(x) {
+breaks <- floor(pretty(x, n, ...))
+names(breaks) <- attr(breaks, "labels")
+breaks
+}
+return(fxn)
 }

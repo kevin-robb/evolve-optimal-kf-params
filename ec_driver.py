@@ -27,12 +27,17 @@ def next_generation(roster:List, next_id:List[int]) -> List:
     next_gen = [parents[i].crossover(parents[i + len(roster)], next_id) for i in range(len(roster))]
     return next_gen
 
-def setup_summary_file(directory:str, run_id:str) -> str:
+def setup_summary_file(directory:str) -> str:
     filepath = directory + "/summary.csv"
+    header = "agent_id,generation_number,fitness"
+    # include the genome labels.
+    file2 = open("config/default_genome.csv","r+")
+    header += file2.readline()
+    file2.close()
     # create the file and write the header to the first line.
-    header = ["agent_id","generation_number","p_11","p_22","p_33","p_44","q_11","q_22","q_33","q_44","r_11","r_22","r_33","r_44","fitness"]
     file1 = open(filepath, "a+")
-    file1.write(",".join(header) + "\n")
+    file1.write(header + "\n")
+    file1.close()
     return filepath
 
 def setup_dir() -> Tuple:

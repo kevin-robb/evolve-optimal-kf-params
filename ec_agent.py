@@ -21,7 +21,7 @@ class Agent:
     def init_genome(self):
         filepath = "config/default_genome.csv"
         file3 = open(filepath, "r")
-        self.genome = [float(g) for g in file3.readline().split(",")]
+        self.genome = [float(g) for g in file3.readlines()[1].split(",")]
         file3.close()
     
     # randomize the genome for the first generation.
@@ -68,7 +68,7 @@ class Agent:
             # if this is a new file, we have a problem.
             raise Exception ("File does not exist for " + filepath)
         # add the row for this round of results
-        row = ",".join([str(self.id),str(self.gen_num)] + [str(g) for g in self.genome] + [str(self.fitness)])
+        row = ",".join([str(self.id),str(self.gen_num),str(self.fitness)] + [str(g) for g in self.genome])
         file1.write(row + "\n")
         file1.close()
 
