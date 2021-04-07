@@ -130,7 +130,7 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
     plot_path = paste("./", dirpath, "/", filename, ".png", sep="")
   }
   # store the plot PNG
-  cowplot::save_plot(plot_path,p_tot,base_height=4,base_width=6.5)
+  cowplot::save_plot(plot_path,p_tot,base_height=3,base_width=4.5)
   
 }
 

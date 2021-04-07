@@ -5,7 +5,7 @@
 # Generates a PNG showing a column of all agents in a generation (full=TRUE)
 # or only the best and median (full=FALSE).
 #
-plot_summary <- function(dirpath, png=TRUE, full=TRUE) {
+plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
   library(reshape2)
   library(ggplot2)
   library(grid)
@@ -17,7 +17,10 @@ plot_summary <- function(dirpath, png=TRUE, full=TRUE) {
   df=read.csv(filepath, header=TRUE)
 
   # the highest gen_num will be the max on the x-axis.
-  max_gen = tail(df$generation_number)
+  max_gen = max(tail(df$generation_number))
+
+  # subset the dataframe into only the stuff we care about.
+  #df=data.frame(df$generation_number,df$fitness)
 
   if (full) {
     p <- ggplot(df) + 
@@ -25,14 +28,26 @@ plot_summary <- function(dirpath, png=TRUE, full=TRUE) {
       ylim(c(0,max(df->fitness)))
   } else {
     # if we are NOT running with full=TRUE, extract max and median in each gen.
-    require(data.table)
-    group <- as.data.table(df)
-    gen_best=group[group[, .I[which.max(fitness)], by=generation_number]$V1]
-    gen_medians=group[group[, .I[which.median(fitness)], by=generation_number]$V1]
+    df_quart <- data.frame(generation_number=integer(), best=double(), median=double(), stringsAsFactors=FALSE)
+    for (gen in seq(1,max_gen,1)) {
+      # only look at agents in this generation.
+      df_sub <- subset(df, generation_number==gen)
+      # find the best (min) & median values
+      best <- min(df_sub$fitness)
+      med <- median(df_sub$fitness)
+      # create df with new values.
+      df_temp <- data.frame(gen,best,med)
+      names(df_temp) <- c("generation_number","best","median")
+      # add this row to our summary df.
+      df_quart <- rbind(df_quart, df_temp)
+    }
+    # now we have the data we want isolated in df_quart. plot it.
+    df_quart <- melt(df_quart ,  id.vars = 'generation_number', variable.name = 'quantity')
+    p <- ggplot(df_quart, aes(generation_number, value)) +
+      geom_point(aes(colour = quantity))
   }
   
-  
-  # define the plot. use only generation # and fitness.
+  # add all the plot formatting.
   p <- p +
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("Fitness Distribution For Each Generation") + 
@@ -47,14 +62,14 @@ plot_summary <- function(dirpath, png=TRUE, full=TRUE) {
   # write the plot to a file.
   if (png == TRUE) {
     plot_path = paste("./", dirpath, "/summary.png", sep="")
-    cowplot::save_plot(plot_path,p,base_height=4,base_width=6.5)
+    cowplot::save_plot(plot_path,p,base_height=3,base_width=4.5)
   } else {
     p
   }
   
 }
 
-# A function factory for getting integer y-axis values.
+# A function for getting integer axis values.
 # https://www.r-bloggers.com/2019/11/setting-axes-to-integer-values-in-ggplot2/
 integer_breaks <- function(n = 5, ...) {
 fxn <- function(x) {
@@ -65,29 +80,36 @@ breaks
 return(fxn)
 }
 
-
-
 ## Plot EC fitness data from command line. format:
-# Rscript --vanilla functions/plot_summary.R "filename" true
+# Rscript --vanilla functions/plot_summary.R "filename" true true
 
 # grab parameters from command line
 args = commandArgs(trailingOnly=TRUE)
 
-# test if there is at least one argument: if not, return an error
+# test if there is at least one argument: if not, return an error.
 if (length(args)==0) {
   stop("Must supply run directory in format 'runs/run_2021-03-08-18-23-03'", call.=FALSE)
 } else if (length(args)==1) {
-  # when called from the command line, by default write to PNG
+  # when called from the command line, by default use the full data & write to PNG.
   args[2] = "true"
+  args[3] = "true"
+} else if (length(args)==2) {
+  # assume we want to write to PNG, so take second arg as the "full" param.
+  args[3] = "true"
+} else if (length(args)>3) {
+  stop("Too many command line arguments", call.=FALSE)
 }
 
 # source the function
 #source("functions/plot_summary.R")
 
-## Call function with command line params
-# keep track of whether to write to PNG or not
+full_choice=FALSE
+png_choice=FALSE
 if (tolower(args[2]) == "true") {
-  plot_summary(dirpath=args[1],png=TRUE)
-} else {
-  plot_summary(dirpath=args[1],png=FALSE)
+  full_choice=TRUE
 }
+if (tolower(args[3]) == "true") {
+  png_choice=TRUE
+}
+
+plot_summary(dirpath=args[1],full=full_choice,png=png_choice)
