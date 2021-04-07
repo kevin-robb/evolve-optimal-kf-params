@@ -88,6 +88,9 @@ def main():
         # see if they skipped this, and use default values if so.
         if gen_size is None or num_gens is None:
             gen_size, num_gens = 3, 3
+
+    # source the ROS workspace.
+    run_bash_cmd("source sim_ws/devel/setup.bash")
             
     # create the folder/file we will use for this run's data.
     directory, summary_filepath = setup_dir()

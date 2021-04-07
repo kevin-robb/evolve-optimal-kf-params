@@ -5,9 +5,6 @@
 ARG=${1:-empty}
 NDEF="nondefault"
 
-# make sure we have sourced the right ros workspace.
-source sim_ws/devel/setup.bash
-
 # assume that if we haven't run with "nondefault", we want to use default settings.
 if [ "$ARG" != "$NDEF" ]; then
     echo "Using default KF settings."
@@ -16,6 +13,9 @@ if [ "$ARG" != "$NDEF" ]; then
     echo "FNAME is: ${FNAME}"
     # make sure the KF uses its default parameters.
     python3 functions/reset_for_solo_run.py $FNAME
+
+    # make sure we have sourced the right ros workspace.
+    source sim_ws/devel/setup.bash
 fi
 
 # Launch the simulator.
