@@ -61,55 +61,45 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
   
   # write the plot to a file.
   if (png == TRUE) {
-    plot_path = paste("./", dirpath, "/summary.png", sep="")
+    if (full) {
+      fname = "summary_full.png"
+    } else {
+      fname = "summary.png"
+    }
+    plot_path = paste("./", dirpath, "/", fname, sep="")
     cowplot::save_plot(plot_path,p,base_height=3,base_width=4.5)
   } else {
     p
   }
-  
 }
 
 # A function for getting integer axis values.
 # https://www.r-bloggers.com/2019/11/setting-axes-to-integer-values-in-ggplot2/
 integer_breaks <- function(n = 5, ...) {
-fxn <- function(x) {
-breaks <- floor(pretty(x, n, ...))
-names(breaks) <- attr(breaks, "labels")
-breaks
-}
-return(fxn)
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
 }
 
 ## Plot EC fitness data from command line. format:
-# Rscript --vanilla functions/plot_summary.R "filename" true true
+# Rscript --vanilla functions/plot_summary.R "directory name"
 
 # grab parameters from command line
 args = commandArgs(trailingOnly=TRUE)
 
-# test if there is at least one argument: if not, return an error.
+# check number of arguments.
 if (length(args)==0) {
   stop("Must supply run directory in format 'runs/run_2021-03-08-18-23-03'", call.=FALSE)
-} else if (length(args)==1) {
-  # when called from the command line, by default use the full data & write to PNG.
-  args[2] = "true"
-  args[3] = "true"
-} else if (length(args)==2) {
-  # assume we want to write to PNG, so take second arg as the "full" param.
-  args[3] = "true"
-} else if (length(args)>3) {
+} else if (length(args)>1) {
   stop("Too many command line arguments", call.=FALSE)
 }
 
 # source the function
 #source("functions/plot_summary.R")
 
-full_choice=FALSE
-png_choice=FALSE
-if (tolower(args[2]) == "true") {
-  full_choice=TRUE
-}
-if (tolower(args[3]) == "true") {
-  png_choice=TRUE
-}
-
-plot_summary(dirpath=args[1],full=full_choice,png=png_choice)
+# create both a full plot and condensed plot.
+plot_summary(dirpath=args[1],full=TRUE)
+plot_summary(dirpath=args[1],full=FALSE)
