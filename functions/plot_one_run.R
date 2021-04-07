@@ -1,4 +1,6 @@
-# Plot 4-Dimensional Kalman Filter Data.
+#!/usr/bin/env Rscript
+
+# Plot 4-Dimensional Kalman Filter Data from a single run.
 #
 # Generates a PNG graphing all four KF parameters' 
 # measured, predicted, and state values, as well
@@ -7,7 +9,7 @@
 # Also shows the path followed by the robot (X vs Y),
 # and optionally show the measured heading in a separate plot.
 #
-plot_with_track <- function(filename, dirpath, plot_hdg=FALSE) {
+plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   library(reshape2)
   library(ggplot2)
   library(grid)
@@ -131,3 +133,25 @@ plot_with_track <- function(filename, dirpath, plot_hdg=FALSE) {
   cowplot::save_plot(plot_path,p_tot,base_height=4,base_width=6.5)
   
 }
+
+
+## Plot KF data with track from command line. format:
+# Rscript --vanilla functions/plot_one_run.R "filename" true
+
+#!/usr/bin/env Rscript
+# grab parameters from command line
+args = commandArgs(trailingOnly=TRUE)
+
+# test if there is at least one argument: if not, return an error
+if (length(args)==0) {
+  stop("Must supply filename (without extension) and optionally the directory", call.=FALSE)
+} else if (length(args)==1) {
+  # run the script as previously, with one file in the kf_data directory.
+  args[2] = "kf_data"
+}
+
+# source the function
+#source("functions/plot_one_run.R")
+
+## Call function with command line params
+plot_one_run(filename=args[1],dirpath=args[2])

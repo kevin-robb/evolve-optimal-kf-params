@@ -117,13 +117,13 @@ def main():
             # write this agent & its performance to the file.
             agent.write_to_file(summary_filepath)
             # generate the plot for this agent's KF data.
-            run_bash_cmd("Rscript --vanilla functions/plot_cl_track.R " + agent_filename + " " + directory)
+            run_bash_cmd("Rscript --vanilla functions/plot_one_run.R " + agent_filename + " " + directory)
 
         # form the next generation.
         roster = next_generation(roster, next_id)
 
     # after repeating for the desired number of generations, run our plotting script.
-    run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + directory)
+    run_bash_cmd("Rscript --vanilla functions/plot_summary.R " + directory)
 
     # TODO make individual plots for comparison with best/worst/avg agents in first/mid/final gen.
 
