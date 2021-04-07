@@ -15,29 +15,45 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   library(grid)
   library(gridExtra)
   library(cowplot)
-
-  # get the waypoints (TODO this was causing errors, need to fix)
-  # wp_path = "./config/waypoints.csv"
-  # wp_df=read.csv(wp_path)
+  #library(SparkR)
   
   # read in the data from the file
   filepath = paste("./", dirpath, "/", filename, ".csv", sep="")
   df=read.csv(filepath)
 
+  incl_wp=TRUE
+  if (incl_wp) {
+    # grab the waypoints from their file.
+    wp_df=read.csv("./config/waypoints.csv", header=TRUE)
+
+    # add each as a constant value column to df.
+    df$wp_x1 <- wp_df$x[[1]]
+    #df[["new_column"]] <- "N"
+    df$wp_y1 <- wp_df$y[[1]]
+    df$wp_x2 <- wp_df$x[[2]]
+    df$wp_y2 <- wp_df$y[[2]]
+    df$wp_x3 <- wp_df$x[[3]]
+    df$wp_y3 <- wp_df$y[[3]]
+    df$wp_x4 <- wp_df$x[[4]]
+    df$wp_y4 <- wp_df$y[[4]]
+    df$wp_x5 <- wp_df$x[[5]]
+    df$wp_y5 <- wp_df$y[[5]]
+  }
+
   # data file has 18 columns, (will be 19 when timestep is added)
   # meas (4d), pred (4d), state (4d), truth (5d), cur_hdg (1d)
+  # plus now 10 more for the waypoints
   meas_names <- c("x_meas","y_meas","xdot_meas","ydot_meas")
   pred_names <- c("x_pred","y_pred","xdot_pred","ydot_pred")
   state_names <- c("x_state","y_state","xdot_state","ydot_state")
   truth_names <- c("x_true","y_true","xdot_true","ydot_true","vel_true")
   yaw_name <- c("cur_hdg")
-  names(df) <- c(meas_names, pred_names, state_names, truth_names, yaw_name)
+  wp_names <- c("wp_x1","wp_y1","wp_x2","wp_y2","wp_x3","wp_y3","wp_x4","wp_y4","wp_x5","wp_y5")
+  names(df) <- c(meas_names, pred_names, state_names, truth_names, yaw_name, wp_names)
 
   # add a timestep independent variable
   t = c(1:length(df$x_meas))
   df <- cbind(t, df)
-  
-  #head(df)
   
   # change the names of df_x since they will be used for the legend
   df_x_pre <- df[,c(1,2,6,10,14)]
@@ -83,16 +99,26 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
     scale_x_reverse() +
     ggtitle("Robot Path (X vs Y)") +
     xlab("Y Position") + ylab("X Position") +
-    geom_point(aes(y_true,x_true), color="black") +
-    geom_point(aes(y_meas,x_meas), color="red") +
-    geom_point(aes(y_pred,x_pred),color="blue") +
-    geom_point(aes(y_state,x_state),color="green") +
+    geom_point(aes(y_true,x_true), color="black",size=0.2,stroke=1,shape=16) +
+    geom_point(aes(y_meas,x_meas), color="red",size=0.2,stroke=1,shape=16) +
+    geom_point(aes(y_pred,x_pred),color="blue",size=0.2,stroke=1,shape=16) +
+    geom_point(aes(y_state,x_state),color="green",size=0.2,stroke=1,shape=16) +
     theme(plot.title = element_text(size=14)) +
     coord_cartesian(xlim = c(25, -25), ylim = c(0, 90)) +
     theme_minimal_grid(12) #+ theme(legend.position="none")
   p_t
 
-  # TODO add the waypoints to the path plot
+  # add the waypoints to the path plot
+  if (incl_wp) {
+    # TODO make them a different color based on whether they were successfully hit or not.
+    # maybe pink=hit, purple=missed
+    p_t <- p_t +
+      geom_point(aes(wp_y1,wp_x1), color="purple") +
+      geom_point(aes(wp_y2,wp_x2), color="purple") +
+      geom_point(aes(wp_y3,wp_x3), color="purple") +
+      geom_point(aes(wp_y4,wp_x4), color="purple") +
+      geom_point(aes(wp_y5,wp_x5), color="purple")
+  }
   
   ## combine plots
 
@@ -130,28 +156,28 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
     plot_path = paste("./", dirpath, "/", filename, ".png", sep="")
   }
   # store the plot PNG
-  cowplot::save_plot(plot_path,p_tot,base_height=3,base_width=4.5)
+  cowplot::save_plot(plot_path,p_tot,base_height=4,base_width=6.5)
   
 }
 
-
 ## Plot KF data with track from command line. format:
-# Rscript --vanilla functions/plot_one_run.R "filename" true
+# Rscript --vanilla functions/plot_one_run.R "filename" "directory"
 
-#!/usr/bin/env Rscript
-# grab parameters from command line
+# grab parameters from command line.
 args = commandArgs(trailingOnly=TRUE)
 
-# test if there is at least one argument: if not, return an error
+# check number of arguments.
 if (length(args)==0) {
   stop("Must supply filename (without extension) and optionally the directory", call.=FALSE)
 } else if (length(args)==1) {
   # run the script as previously, with one file in the kf_data directory.
   args[2] = "kf_data"
+} else if (length(args)>2) {
+  stop("Too many command line arguments", call.=FALSE)
 }
 
-# source the function
+# source the function.
 #source("functions/plot_one_run.R")
 
-## Call function with command line params
+# call function with command line params.
 plot_one_run(filename=args[1],dirpath=args[2])
