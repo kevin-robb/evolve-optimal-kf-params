@@ -1,5 +1,10 @@
 #!/usr/bin/env Rscript
 
+# To use from cmd line, invoke:
+# Rscript --vanilla functions/plot_summary.R "directory name"
+# To use in another R/Rmd script:
+# source("functions/plot_summary.R")
+
 # Plot agents' fitness by generation to show evolution.
 #
 # Generates a PNG showing a column of all agents in a generation (full=TRUE)
@@ -84,22 +89,20 @@ integer_breaks <- function(n = 5, ...) {
   return(fxn)
 }
 
-## Plot EC fitness data from command line. format:
-# Rscript --vanilla functions/plot_summary.R "directory name"
+## Command Line stuff
 
 # grab parameters from command line
 args = commandArgs(trailingOnly=TRUE)
 
 # check number of arguments.
-if (length(args)==0) {
-  stop("Must supply run directory in format 'runs/run_2021-03-08-18-23-03'", call.=FALSE)
+if (length(args)==1) {
+  # create both a full plot and condensed plot.
+  plot_summary(dirpath=args[1],full=TRUE)
+  plot_summary(dirpath=args[1],full=FALSE)
 } else if (length(args)>1) {
   stop("Too many command line arguments", call.=FALSE)
+} else { #length(args)==0
+  # Comment out this line to be able to source this file
+  # and use the function from somewhere besides the cmd line.
+  stop("Must supply run directory in format 'runs/run_2021-03-08-18-23-03'", call.=FALSE)
 }
-
-# source the function
-#source("functions/plot_summary.R")
-
-# create both a full plot and condensed plot.
-plot_summary(dirpath=args[1],full=TRUE)
-plot_summary(dirpath=args[1],full=FALSE)

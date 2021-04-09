@@ -114,8 +114,9 @@ def main():
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
             agent.fitness = agent.results["Score"]
-            # write this agent & its performance to the file.
+            # write this agent & its performance to the files.
             agent.write_to_file(summary_filepath)
+            read_results.write_file(agent.results)
             # generate the plot for this agent's KF data.
             run_bash_cmd("Rscript --vanilla functions/plot_one_run.R " + agent_filename + " " + directory)
 

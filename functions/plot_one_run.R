@@ -1,5 +1,10 @@
 #!/usr/bin/env Rscript
 
+# To use from cmd line, invoke:
+# Rscript --vanilla functions/plot_one_run.R "filename" "directory"
+# To use in another R/Rmd script:
+# source("functions/plot_one_run.R")
+
 # Plot 4-Dimensional Kalman Filter Data from a single run.
 #
 # Generates a PNG graphing all four KF parameters' 
@@ -160,24 +165,22 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   
 }
 
-## Plot KF data with track from command line. format:
-# Rscript --vanilla functions/plot_one_run.R "filename" "directory"
+## Command Line stuff
 
 # grab parameters from command line.
 args = commandArgs(trailingOnly=TRUE)
 
 # check number of arguments.
-if (length(args)==0) {
-  stop("Must supply filename (without extension) and optionally the directory", call.=FALSE)
+if (length(args)==2) {
+  plot_one_run(filename=args[1],dirpath=args[2])
 } else if (length(args)==1) {
   # run the script as previously, with one file in the kf_data directory.
   args[2] = "kf_data"
+  plot_one_run(filename=args[1],dirpath=args[2])
 } else if (length(args)>2) {
   stop("Too many command line arguments", call.=FALSE)
+} else { #length(args)==0
+  # Comment out this line to be able to source this file
+  # and use the function from somewhere besides the cmd line.
+  stop("Must supply filename (without extension) and optionally the directory", call.=FALSE)
 }
-
-# source the function.
-#source("functions/plot_one_run.R")
-
-# call function with command line params.
-plot_one_run(filename=args[1],dirpath=args[2])
