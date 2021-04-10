@@ -60,15 +60,6 @@ def set_kf_data_loc(directory:str, fname:str):
     file1.write(row)
     file1.close
 
-# def get_waypoints() -> List[float]:
-#     # grab the waypoints from the file they are written to.
-#     filepath = "config/waypoints.csv"
-#     file1 = open(filepath, "r+")
-#     line = file1.readlines()[0]
-#     wp = [float(num) for num in line.split(",")]
-#     file1.close()
-#     return wp
-
 def run_bash_cmd(command:str):
     # run something on the command line.
     process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)

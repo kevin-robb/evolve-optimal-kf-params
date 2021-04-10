@@ -37,7 +37,7 @@ killall -9 rosmaster
 # in the default case, go ahead and plot the data
 if [ "$ARG" != "$NDEF" ]; then
     echo "Parsing results.txt."
-    python3 functions/read_results.py
+    python3 functions/store_results_for_plot_access.py
     echo "Creating plot of KF data."
     Rscript --vanilla functions/plot_one_run.R $FNAME
     #need to pass the filename as a param, which is annoying to get here

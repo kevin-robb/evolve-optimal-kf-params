@@ -48,7 +48,6 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   if(incl_results) {
     # grab the pre-processed results
     res_df=read.csv("./config/results.csv", header=TRUE)
-
   }
 
   # data file has 18 columns, (will be 19 when timestep is added)
@@ -127,7 +126,7 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
       if (!as.logical(res_df$wp1)) { wp_cols[[1]] = "yellow" }
       if (!as.logical(res_df$wp2)) { wp_cols[[2]] = "yellow" }
       if (!as.logical(res_df$wp3)) { wp_cols[[3]] = "yellow" }
-
+    }
     p_t <- p_t +
       geom_point(aes(wp_y1,wp_x1), color="purple") + #start
       geom_point(aes(wp_y2,wp_x2), color=wp_cols[[1]]) +

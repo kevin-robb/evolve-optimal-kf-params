@@ -101,11 +101,8 @@ def get_kf_state(state_msg):
     State = state_msg.data
     kf_pos.latitude = State[0]
     kf_pos.longitude = State[1]
-
-# def update_robot_gps(gps_reading):
-#     global robot_gps, visited
-#     robot_gps = gps_reading
-    print("KF Position:[" + str(kf_pos.latitude) + "," + str(kf_pos.longitude) + "]")
+    #print("KF Position:[" + str(kf_pos.latitude) + "," + str(kf_pos.longitude) + "]")
+    
     # make sure the robot is still in bounds
     check_in_bounds(kf_pos)
     # check all the bonus waypoints to see if visited.

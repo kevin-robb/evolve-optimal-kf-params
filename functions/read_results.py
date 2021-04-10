@@ -1,9 +1,9 @@
 # This file will read results.txt after it is created by the simulator finishing a run.
 
-def read_file():
+def read_file(res_location="results.txt"):
     # bring in results.txt as a list of strings for each line
     # open file in read mode.
-    file1 = open("results.txt", "r+")
+    file1 = open(res_location, "r+")
     results = file1.readlines()
     file1.close()
     # check for error
@@ -66,10 +66,9 @@ def write_file(elements):
     file2.write(row + "\n")
     file2.close()
 
-el = read_file()
+#el = read_file()
 #print(el)
-write_file(el)
-
+#write_file(el)
 
 """ # Sample results.txt on successful completion of course.
 Team WickedSlickRobotics
