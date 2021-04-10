@@ -66,9 +66,9 @@ def write_file(elements):
     file2.write(row + "\n")
     file2.close()
 
-#el = read_file()
+el = read_file()
 #print(el)
-#write_file_full(el)
+write_file(el)
 
 
 """ # Sample results.txt on successful completion of course.

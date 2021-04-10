@@ -20,7 +20,6 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   library(grid)
   library(gridExtra)
   library(cowplot)
-  #library(SparkR)
   
   # read in the data from the file
   filepath = paste("./", dirpath, "/", filename, ".csv", sep="")
@@ -43,6 +42,13 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
     df$wp_y4 <- wp_df$y[[4]]
     df$wp_x5 <- wp_df$x[[5]]
     df$wp_y5 <- wp_df$y[[5]]
+  }
+
+  incl_results=TRUE
+  if(incl_results) {
+    # grab the pre-processed results
+    res_df=read.csv("./config/results.csv", header=TRUE)
+
   }
 
   # data file has 18 columns, (will be 19 when timestep is added)
@@ -115,14 +121,19 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
 
   # add the waypoints to the path plot
   if (incl_wp) {
-    # TODO make them a different color based on whether they were successfully hit or not.
-    # maybe pink=hit, purple=missed
+    wp_cols = c("purple","purple","purple")
+    # make them a different color based on whether they were successfully hit or not.
+    if (incl_results) {
+      if (!as.logical(res_df$wp1)) { wp_cols[[1]] = "yellow" }
+      if (!as.logical(res_df$wp2)) { wp_cols[[2]] = "yellow" }
+      if (!as.logical(res_df$wp3)) { wp_cols[[3]] = "yellow" }
+
     p_t <- p_t +
-      geom_point(aes(wp_y1,wp_x1), color="purple") +
-      geom_point(aes(wp_y2,wp_x2), color="purple") +
-      geom_point(aes(wp_y3,wp_x3), color="purple") +
-      geom_point(aes(wp_y4,wp_x4), color="purple") +
-      geom_point(aes(wp_y5,wp_x5), color="purple")
+      geom_point(aes(wp_y1,wp_x1), color="purple") + #start
+      geom_point(aes(wp_y2,wp_x2), color=wp_cols[[1]]) +
+      geom_point(aes(wp_y3,wp_x3), color=wp_cols[[2]]) +
+      geom_point(aes(wp_y4,wp_x4), color=wp_cols[[3]]) +
+      geom_point(aes(wp_y5,wp_x5), color="purple") #goal
   }
   
   ## combine plots
