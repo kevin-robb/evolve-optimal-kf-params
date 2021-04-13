@@ -7,6 +7,7 @@ from random import choices
 from datetime import datetime
 import subprocess
 import sys
+#from os import system
 #from os import path, mkdir
 
 def initialize_agents(roster_size:int, next_id:List[int]) -> List:
@@ -36,7 +37,7 @@ def setup_summary_file(directory:str) -> str:
     file2.close()
     # create the file and write the header to the first line.
     file1 = open(filepath, "a+")
-    file1.write(header + "\n")
+    file1.write(header) #+"\n"
     file1.close()
     return filepath
 
@@ -48,7 +49,7 @@ def setup_dir() -> Tuple:
     directory = "runs/run_" + run_id
     run_bash_cmd("mkdir " + directory)
     # create the summary file for this run and return the filepath.
-    return directory, setup_summary_file(directory, run_id)
+    return directory, setup_summary_file(directory)
 
 def set_kf_data_loc(directory:str, fname:str):
     filepath = "config/kf_data_destination.csv"
@@ -61,9 +62,12 @@ def set_kf_data_loc(directory:str, fname:str):
     file1.close
 
 def run_bash_cmd(command:str):
+    print("Running cmd: " + command)
     # run something on the command line.
-    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+    process = subprocess.Popen(command.split())
+    #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, shell=True)
     output, error = process.communicate()
+    #system(command)
     
 def main():
     # set parameters from cmd line args.
@@ -81,7 +85,7 @@ def main():
             gen_size, num_gens = 3, 3
 
     # source the ROS workspace.
-    run_bash_cmd("source sim_ws/devel/setup.bash")
+    #run_bash_cmd("source sim_ws/devel/setup.bash")
             
     # create the folder/file we will use for this run's data.
     directory, summary_filepath = setup_dir()

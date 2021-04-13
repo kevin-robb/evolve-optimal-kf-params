@@ -45,9 +45,13 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   }
 
   incl_results=TRUE
-  if(incl_results) {
+  if (incl_results) {
     # grab the pre-processed results
     res_df=read.csv("./config/results.csv", header=TRUE)
+    # do not use this data if there was an error
+    if (res_df$seed[1] == -1) {
+      incl_results=FALSE
+    }
   }
 
   # data file has 18 columns, (will be 19 when timestep is added)
@@ -135,7 +139,17 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
       geom_point(aes(wp_y5,wp_x5), color="purple") #goal
   }
   
+  # create the "plot" of text
+  tex <- ggdraw(plot.new()) + 
+    draw_label(paste("",res_df$seed[1],""), x=0, hjust=0, y=1.0, size = 9) +
+    draw_label(paste("Obstacles:",res_df$obst[1],""), x=0, hjust=0, y=0.85, size = 9) +
+    draw_label(paste("Noise:",res_df$noise[1],""), x=0, hjust=0, y=0.7, size = 9) +
+    draw_label(paste("Time:",res_df$time[1],""), x=0, hjust=0, y=0.55, size = 9) +
+    draw_label(paste("Score:",res_df$score[1],""), x=0, hjust=0, y=0.4, size = 9)
+
   ## combine plots
+  # legend above text
+  leg_tex <- cowplot::plot_grid(legend,tex,ncol=1)
 
   # main 4 plots (x,y,xdot,ydot) will be left side
   ptl <- cowplot::align_plots(p_x,p_xdot,align='v')
@@ -144,8 +158,8 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   pr <- cowplot::plot_grid(ptl[[2]],ptr[[2]], ncol=2)
   p_left <- cowplot::plot_grid(pl,pr,ncol=1)
   
-  # track and legend will be right side
-  p_right <- cowplot::plot_grid(p_t, legend, ncol=2, rel_widths=c(2,1))
+  # track and legend/text will be right side
+  p_right <- cowplot::plot_grid(p_t, leg_tex, ncol=2, rel_widths=c(2,1))
   
   if (plot_hdg == TRUE) {
     # make the heading plot

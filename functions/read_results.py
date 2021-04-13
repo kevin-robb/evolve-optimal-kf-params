@@ -59,10 +59,15 @@ def write_file(elements):
     # clear the file
     file2.seek(0)
     file2.truncate()
-    # add the header
-    file2.write(",".join(header) + "\n")
-    # add the row for this round of results
-    row = ",".join([str(elements[k]) for k in h_keys])
+    
+    # check if this run finished successfully
+    if len(elements) > 1:
+        # add the header
+        file2.write(",".join(header) + "\n")
+        # add the row for this round of results
+        row = ",".join([str(elements[k]) for k in h_keys])
+    else:
+        row = "seed\n-1"
     file2.write(row + "\n")
     file2.close()
 

@@ -22,7 +22,8 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
   df=read.csv(filepath, header=TRUE)
 
   # the highest gen_num will be the max on the x-axis.
-  max_gen = max(tail(df$generation_number))
+  #max_gen = max(tail(df$generation_number))
+  max_gen = max(df$generation_number)
 
   # subset the dataframe into only the stuff we care about.
   #df=data.frame(df$generation_number,df$fitness)
