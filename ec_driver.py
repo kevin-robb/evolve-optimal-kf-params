@@ -7,6 +7,7 @@ from random import choices
 from datetime import datetime
 import subprocess
 import sys
+#from os import system
 #from os import path, mkdir
 
 def initialize_agents(roster_size:int, next_id:List[int]) -> List:
@@ -27,12 +28,17 @@ def next_generation(roster:List, next_id:List[int]) -> List:
     next_gen = [parents[i].crossover(parents[i + len(roster)], next_id) for i in range(len(roster))]
     return next_gen
 
-def setup_summary_file(directory:str, run_id:str) -> str:
+def setup_summary_file(directory:str) -> str:
     filepath = directory + "/summary.csv"
+    header = "agent_id,generation_number,fitness"
+    # include the genome labels.
+    file2 = open("config/default_genome.csv","r+")
+    header += file2.readline()
+    file2.close()
     # create the file and write the header to the first line.
-    header = ["agent_id","generation_number","p_11","p_22","p_33","p_44","q_11","q_22","q_33","q_44","r_11","r_22","r_33","r_44","fitness"]
     file1 = open(filepath, "a+")
-    file1.write(",".join(header) + "\n")
+    file1.write(header) #+"\n"
+    file1.close()
     return filepath
 
 def setup_dir() -> Tuple:
@@ -43,7 +49,7 @@ def setup_dir() -> Tuple:
     directory = "runs/run_" + run_id
     run_bash_cmd("mkdir " + directory)
     # create the summary file for this run and return the filepath.
-    return directory, setup_summary_file(directory, run_id)
+    return directory, setup_summary_file(directory)
 
 def set_kf_data_loc(directory:str, fname:str):
     filepath = "config/kf_data_destination.csv"
@@ -55,19 +61,13 @@ def set_kf_data_loc(directory:str, fname:str):
     file1.write(row)
     file1.close
 
-# def get_waypoints() -> List[float]:
-#     # grab the waypoints from the file they are written to.
-#     filepath = "config/waypoints.csv"
-#     file1 = open(filepath, "r+")
-#     line = file1.readlines()[0]
-#     wp = [float(num) for num in line.split(",")]
-#     file1.close()
-#     return wp
-
 def run_bash_cmd(command:str):
+    print("Running cmd: " + command)
     # run something on the command line.
-    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+    process = subprocess.Popen(command.split())
+    #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, shell=True)
     output, error = process.communicate()
+    #system(command)
     
 def main():
     # set parameters from cmd line args.
@@ -83,6 +83,9 @@ def main():
         # see if they skipped this, and use default values if so.
         if gen_size is None or num_gens is None:
             gen_size, num_gens = 3, 3
+
+    # source the ROS workspace.
+    #run_bash_cmd("source sim_ws/devel/setup.bash")
             
     # create the folder/file we will use for this run's data.
     directory, summary_filepath = setup_dir()
@@ -102,20 +105,21 @@ def main():
             agent_filename = "kf_output_" + str(agent.id)
             set_kf_data_loc(directory, agent_filename)
             # call the bash script to run the sim.
-            run_bash_cmd("bash run_once.sh")
+            run_bash_cmd("bash run_once.sh nondefault")
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
             agent.fitness = agent.results["Score"]
-            # write this agent & its performance to the file.
+            # write this agent & its performance to the files.
             agent.write_to_file(summary_filepath)
+            read_results.write_file(agent.results)
             # generate the plot for this agent's KF data.
-            run_bash_cmd("Rscript --vanilla functions/plot_cl_track.R " + agent_filename + " " + directory)
+            run_bash_cmd("Rscript --vanilla functions/plot_one_run.R " + agent_filename + " " + directory)
 
         # form the next generation.
         roster = next_generation(roster, next_id)
 
     # after repeating for the desired number of generations, run our plotting script.
-    run_bash_cmd("Rscript --vanilla functions/plot_cl_fitness.R " + directory)
+    run_bash_cmd("Rscript --vanilla functions/plot_summary.R " + directory)
 
     # TODO make individual plots for comparison with best/worst/avg agents in first/mid/final gen.
 

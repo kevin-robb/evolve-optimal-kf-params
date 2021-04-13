@@ -1,0 +1,2 @@
+seed,obstacle_type,noise_type,time,score,damage,num_waypoints_hit,wp1,wp2,wp3
+1484052208,none,realistic,49.02,441.18,0.0,0,False,False,False

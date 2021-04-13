@@ -134,7 +134,7 @@ def measure():
         -cur_vel[2] * sin(cur_hdg)]))
     
     # print the measured robot position
-    print("Measured Pos:[" + str(Z[0]) + "," + str(Z[1]) + "]")
+    #print("Measured Pos:[" + str(Z[0]) + "," + str(Z[1]) + "]")
 
 def update():
     global K, X, P

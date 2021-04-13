@@ -61,15 +61,12 @@ def write_to_file():
     # want to replace the previous waypoints (w=write).
     file1 = open(filepath + "waypoints.csv", "w+")
     # grab the waypoints already turned to meters.
-    lines = [["x","y"],["0.0","0.0"]]
+    lines = "x,y\n0.0,0.0\n"
     for bp in bonus_gps:
-        lines += [str(bp.latitude), str(bp.longitude)]
-    lines += [str(goal_gps.latitude), str(goal_gps.longitude)]
-    # temp debugging print to console
-    print("Waypoints: ", lines)
-    # write each row
-    for row in lines:
-        file1.write(",".join(row) + "\n")
+        lines += str(bp.latitude) + "," + str(bp.longitude) + "\n"
+    lines += str(goal_gps.latitude) + "," + str(goal_gps.longitude) + "\n"
+    #print("Waypoints: ", lines)
+    file1.write(lines)
     file1.close()
 
 def make_rel_gps(global_gps):
@@ -104,11 +101,8 @@ def get_kf_state(state_msg):
     State = state_msg.data
     kf_pos.latitude = State[0]
     kf_pos.longitude = State[1]
-
-# def update_robot_gps(gps_reading):
-#     global robot_gps, visited
-#     robot_gps = gps_reading
-    print("KF Position:[" + str(kf_pos.latitude) + "," + str(kf_pos.longitude) + "]")
+    #print("KF Position:[" + str(kf_pos.latitude) + "," + str(kf_pos.longitude) + "]")
+    
     # make sure the robot is still in bounds
     check_in_bounds(kf_pos)
     # check all the bonus waypoints to see if visited.
