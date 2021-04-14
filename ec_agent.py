@@ -72,10 +72,26 @@ class Agent:
         file1.write(row + "\n")
         file1.close()
 
-    # set the KF to use this agent's genome
+    # set the KF to use this agent's genome.
     def set_genome(self):
         filepath = "config/genome.csv"
         file1 = open(filepath, "w")
         row = ",".join([str(item) for item in self.genome])
         file1.write(row)
         file1.close
+    
+    # read the KF data to calculate a fitness for this agent.
+    def calc_fitness(self, fpath:str):
+        # fitness will be a weighted sum of the difference 
+        # between the KF state and the truth.
+        file1 = open(fpath + ".csv", "r")
+        # skip the header (first line)
+        file1.seek(0,1)
+        tot_fit = 0
+        num_timesteps = 0
+        for line in file1.readlines():
+            l = line.split(",")
+            tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
+            num_timesteps += 1
+        file1.close()
+        self.fitness = tot_fit / num_timesteps

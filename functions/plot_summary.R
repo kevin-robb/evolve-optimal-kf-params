@@ -50,7 +50,7 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
     # now we have the data we want isolated in df_quart. plot it.
     df_quart <- melt(df_quart ,  id.vars = 'generation_number', variable.name = 'quantity')
     p <- ggplot(df_quart, aes(generation_number, value)) +
-      geom_point(aes(colour = quantity))
+      geom_point(aes(colour = quantity)) #+ ylim(c(0,max(df_quart$median)))
   }
   
   # add all the plot formatting.

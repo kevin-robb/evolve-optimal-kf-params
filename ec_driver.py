@@ -30,7 +30,7 @@ def next_generation(roster:List, next_id:List[int]) -> List:
 
 def setup_summary_file(directory:str) -> str:
     filepath = directory + "/summary.csv"
-    header = "agent_id,generation_number,fitness"
+    header = "agent_id,generation_number,fitness,"
     # include the genome labels.
     file2 = open("config/default_genome.csv","r+")
     header += file2.readline()
@@ -60,6 +60,7 @@ def set_kf_data_loc(directory:str, fname:str):
     row = directory + fname
     file1.write(row)
     file1.close
+    return row
 
 def run_bash_cmd(command:str):
     print("Running cmd: " + command)
@@ -103,12 +104,12 @@ def main():
             agent.set_genome()
             # make sure the KF outputs data to the right place.
             agent_filename = "kf_output_" + str(agent.id)
-            set_kf_data_loc(directory, agent_filename)
+            fpath = set_kf_data_loc(directory, agent_filename)
             # call the bash script to run the sim.
             run_bash_cmd("bash run_once.sh nondefault")
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
-            agent.fitness = agent.results["Score"]
+            agent.calc_fitness(fpath)
             # write this agent & its performance to the files.
             agent.write_to_file(summary_filepath)
             read_results.write_file(agent.results)
