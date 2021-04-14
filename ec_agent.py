@@ -31,11 +31,12 @@ class Agent:
 
     # mutate the genome of this agent.
     def mutate(self):
-        # choose a gene to mutate.
-        gene = randint(0,len(self.genome)-1)
-        # choose the amount to mutate (gaussian, mean 0, std dev 0.1) and do it.
-        # make sure it is positive, and that the value doesn't drop too close to 0.
-        self.genome[gene] = max(abs(self.genome[gene] + normal(loc=0, scale=0.01)), 0.005)
+        # every gene has a 10% chance to mutate.
+        for g in range(len(self.genome)):
+            if random() > 0.1: pass
+            # choose the amount to mutate (gaussian, mean 0, std dev 0.1) and do it.
+            # make sure it is positive, and that the value doesn't drop too close to 0.
+            self.genome[g] = max(abs(self.genome[g] + normal(loc=0, scale=0.01)), 0.005)
 
     # cross the genes of this agent with another to produce a child.
     def crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
@@ -94,4 +95,5 @@ class Agent:
             tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
             num_timesteps += 1
         file1.close()
+        if num_timesteps == 0: num_timesteps = 1
         self.fitness = tot_fit / num_timesteps

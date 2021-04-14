@@ -40,10 +40,10 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
     for (gen in seq(1,max_gen,1)) {
       # only look at agents in this generation.
       df_sub <- subset(df, generation_number==gen)
-      # find the best (min) & median values
+      # find the best (min) & median values.
       best <- min(df_sub$fitness)
       med <- median(df_sub$fitness)
-      # update the overall max
+      # update the overall max.
       max <- max(c(max, med))
       # create df with new values.
       df_temp <- data.frame(gen,best,med)
@@ -69,6 +69,10 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
     # set x axis labels to integers only
     scale_x_continuous(breaks=integer_breaks(max_gen))
   
+  # make a boxplot version
+  #q <- boxplot(df$fitness~df$generation_number,data=df, main="Fitness by Generation", xlab="Generation Number", ylab="Fitness (lower is better)") 
+
+
   # write the plot to a file.
   if (png == TRUE) {
     if (full) {
