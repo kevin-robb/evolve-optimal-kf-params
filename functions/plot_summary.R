@@ -31,16 +31,20 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
   if (full) {
     p <- ggplot(df) + 
       geom_point(aes(as.numeric(generation_number),as.numeric(fitness)),color="blue") +
-      ylim(c(0,max(df->fitness)))
+      ylim(c(0,max(df$fitness)))
   } else {
     # if we are NOT running with full=TRUE, extract max and median in each gen.
     df_quart <- data.frame(generation_number=integer(), best=double(), median=double(), stringsAsFactors=FALSE)
+    # track overall max for plot limits.
+    max <- 0
     for (gen in seq(1,max_gen,1)) {
       # only look at agents in this generation.
       df_sub <- subset(df, generation_number==gen)
       # find the best (min) & median values
       best <- min(df_sub$fitness)
       med <- median(df_sub$fitness)
+      # update the overall max
+      max <- max(c(max, med))
       # create df with new values.
       df_temp <- data.frame(gen,best,med)
       names(df_temp) <- c("generation_number","best","median")
@@ -50,7 +54,7 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
     # now we have the data we want isolated in df_quart. plot it.
     df_quart <- melt(df_quart ,  id.vars = 'generation_number', variable.name = 'quantity')
     p <- ggplot(df_quart, aes(generation_number, value)) +
-      geom_point(aes(colour = quantity)) #+ ylim(c(0,max(df_quart$median)))
+      geom_point(aes(colour = quantity)) + ylim(c(0,max))
   }
   
   # add all the plot formatting.
