@@ -25,6 +25,9 @@ plot_summary <- function(dirpath, full=TRUE, png=TRUE) {
   #max_gen = max(tail(df$generation_number))
   max_gen = max(df$generation_number)
 
+  # remove rows that resulted in error
+ df = df[df$fitness != 800.0, ]
+
   # subset the dataframe into only the stuff we care about.
   #df=data.frame(df$generation_number,df$fitness)
 

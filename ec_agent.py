@@ -83,17 +83,22 @@ class Agent:
     
     # read the KF data to calculate a fitness for this agent.
     def calc_fitness(self, fpath:str):
-        # fitness will be a weighted sum of the difference 
-        # between the KF state and the truth.
-        file1 = open(fpath + ".csv", "r")
-        # skip the header (first line)
-        file1.seek(0,1)
-        tot_fit = 0
-        num_timesteps = 0
-        for line in file1.readlines():
-            l = line.split(",")
-            tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
-            num_timesteps += 1
-        file1.close()
-        if num_timesteps == 0: num_timesteps = 1
-        self.fitness = tot_fit / num_timesteps
+        # check if this agent ended in error
+        if self.results["Score"] == -1:
+            # set fitness to something big to ensure it is punished
+            self.fitness = 800
+        else:
+            # fitness will be a weighted sum of the difference 
+            # between the KF state and the truth.
+            file1 = open(fpath + ".csv", "r")
+            # skip the header (first line)
+            file1.seek(0,1)
+            tot_fit = 0
+            num_timesteps = 0
+            for line in file1.readlines():
+                l = line.split(",")
+                tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
+                num_timesteps += 1
+            file1.close()
+            if num_timesteps == 0: num_timesteps = 1
+            self.fitness = tot_fit / num_timesteps
