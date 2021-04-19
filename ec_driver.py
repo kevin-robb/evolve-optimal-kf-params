@@ -10,10 +10,10 @@ import sys
 #from os import system
 #from os import path, mkdir
 
-def initialize_agents(roster_size:int, next_id:List[int]) -> List:
+def initialize_agents(roster_size:int, next_id:List[int], rand:bool) -> List:
     roster = []
     for _ in range(roster_size):
-        roster.append(Agent(next_id[0]))
+        roster.append(Agent(id=next_id[0],rand=rand))
         next_id[0] += 1
     return roster
 
@@ -81,6 +81,7 @@ def main():
         # ask to input them (probably I just forgot).
         gen_size = int(input("Enter number of agents per gen: "))
         num_gens = int(input("Enter number of generations to run: "))
+        rand = bool(input("Full random instead of basing on default genome? (true/false): "))
         # see if they skipped this, and use default values if so.
         if gen_size is None or num_gens is None:
             gen_size, num_gens = 3, 3
@@ -94,7 +95,7 @@ def main():
     # this is a list with one element so it can be changed inside functions.
     next_id = [1]
     # create the first generation of agents, with default values.
-    roster = initialize_agents(gen_size, next_id)
+    roster = initialize_agents(gen_size, next_id, rand)
 
     # run the sim for each agent to obtain fitness for each.
     while roster[0].gen_num <= num_gens:
