@@ -8,7 +8,7 @@ def read_file(res_location="results.txt"):
     file1.close()
     # check for error
     if results[0][0:5] == "Error":
-        return {"Score":800}
+        return {"Score":-1}
     
     # interpret the important elements, and write to dictionary.
     keys, values = [], []

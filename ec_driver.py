@@ -10,10 +10,10 @@ import sys
 #from os import system
 #from os import path, mkdir
 
-def initialize_agents(roster_size:int, next_id:List[int]) -> List:
+def initialize_agents(roster_size:int, next_id:List[int], rand:bool) -> List:
     roster = []
     for _ in range(roster_size):
-        roster.append(Agent(next_id[0]))
+        roster.append(Agent(id=next_id[0],rand=rand))
         next_id[0] += 1
     return roster
 
@@ -30,7 +30,7 @@ def next_generation(roster:List, next_id:List[int]) -> List:
 
 def setup_summary_file(directory:str) -> str:
     filepath = directory + "/summary.csv"
-    header = "agent_id,generation_number,fitness"
+    header = "agent_id,generation_number,fitness,"
     # include the genome labels.
     file2 = open("config/default_genome.csv","r+")
     header += file2.readline()
@@ -60,6 +60,7 @@ def set_kf_data_loc(directory:str, fname:str):
     row = directory + fname
     file1.write(row)
     file1.close
+    return row
 
 def run_bash_cmd(command:str):
     print("Running cmd: " + command)
@@ -80,6 +81,7 @@ def main():
         # ask to input them (probably I just forgot).
         gen_size = int(input("Enter number of agents per gen: "))
         num_gens = int(input("Enter number of generations to run: "))
+        rand = bool(input("Full random instead of basing on default genome? (true/false): "))
         # see if they skipped this, and use default values if so.
         if gen_size is None or num_gens is None:
             gen_size, num_gens = 3, 3
@@ -93,7 +95,7 @@ def main():
     # this is a list with one element so it can be changed inside functions.
     next_id = [1]
     # create the first generation of agents, with default values.
-    roster = initialize_agents(gen_size, next_id)
+    roster = initialize_agents(gen_size, next_id, rand)
 
     # run the sim for each agent to obtain fitness for each.
     while roster[0].gen_num <= num_gens:
@@ -103,12 +105,12 @@ def main():
             agent.set_genome()
             # make sure the KF outputs data to the right place.
             agent_filename = "kf_output_" + str(agent.id)
-            set_kf_data_loc(directory, agent_filename)
+            fpath = set_kf_data_loc(directory, agent_filename)
             # call the bash script to run the sim.
             run_bash_cmd("bash run_once.sh nondefault")
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
-            agent.fitness = agent.results["Score"]
+            agent.calc_fitness(fpath)
             # write this agent & its performance to the files.
             agent.write_to_file(summary_filepath)
             read_results.write_file(agent.results)

@@ -6,7 +6,7 @@ from numpy.random import normal
 
 class Agent:
     # instantiate an agent, either with the default genome or a given one.
-    def __init__(self, id:int, genome:List[float] = None, gen_num:int = 1):
+    def __init__(self, id:int, genome:List[float] = None, gen_num:int = 1, rand:bool = False):
         self.id = id
         self.fitness = -1
         self.results = {}
@@ -15,7 +15,7 @@ class Agent:
             self.genome = genome
         else:
             self.init_genome()
-            self.randomize_genome()
+            self.randomize_genome() if not rand else self.full_random_genome()
     
     # grab the default genome values from the config file.
     def init_genome(self):
@@ -24,18 +24,32 @@ class Agent:
         self.genome = [float(g) for g in file3.readlines()[1].split(",")]
         file3.close()
     
-    # randomize the genome for the first generation.
+    # randomly mutate the genome for the first generation.
     def randomize_genome(self):
-        # use a gaussian w/ mean 0 and std dev 0.1 to change each gene.
-        self.genome = [max(abs(g + normal(loc=0, scale=0.01)), 0.005) for g in self.genome]
+        # use a gaussian w/ mean 0 and std dev 0.01 to change each gene.
+        self.genome = [g + normal(loc=0, scale=0.01) for g in self.genome]
+        self.normalize_genome()
 
+    # create a fully random genome for the first generation.
+    def full_random_genome(self):
+        # use a gaussian w/ mean 0.5 and std dev 0.1 to change each gene.
+        self.genome = [normal(loc=0.5, scale=0.1) for g in self.genome]
+        self.normalize_genome()
+        
     # mutate the genome of this agent.
     def mutate(self):
-        # choose a gene to mutate.
-        gene = randint(0,len(self.genome)-1)
-        # choose the amount to mutate (gaussian, mean 0, std dev 0.1) and do it.
-        # make sure it is positive, and that the value doesn't drop too close to 0.
-        self.genome[gene] = max(abs(self.genome[gene] + normal(loc=0, scale=0.01)), 0.005)
+        # every gene has a 5% chance to mutate.
+        for g in range(len(self.genome)):
+            if random() <= 0.05:
+                # choose the amount to mutate (gaussian, mean 0, std dev 0.01) and do it.
+                self.genome[g] = self.genome[g] + normal(loc=0, scale=0.01)
+        self.normalize_genome()
+    
+    # ensure that every gene is in the range (0,1)
+    def normalize_genome(self):
+        # normalize to (0,1).
+        self.genome = [min(g, 0.999) for g in self.genome]
+        self.genome = [max(g, 0.001) for g in self.genome]
 
     # cross the genes of this agent with another to produce a child.
     def crossover(self, other_parent:"Agent", next_id:List[int]) -> "Agent":
@@ -72,10 +86,35 @@ class Agent:
         file1.write(row + "\n")
         file1.close()
 
-    # set the KF to use this agent's genome
+    # set the KF to use this agent's genome.
     def set_genome(self):
         filepath = "config/genome.csv"
         file1 = open(filepath, "w")
         row = ",".join([str(item) for item in self.genome])
         file1.write(row)
         file1.close
+    
+    # read the KF data to calculate a fitness for this agent.
+    def calc_fitness(self, fpath:str):
+        # check if this agent ended in error
+        if self.results["Score"] == -1:
+            # set fitness to something big to ensure it is punished
+            self.fitness = 800
+        else:
+            # fitness will be a weighted sum of the difference 
+            # between the KF state and the truth.
+            file1 = open(fpath + ".csv", "r")
+            # skip the header (first line)
+            file1.seek(0,1)
+            tot_fit = 0
+            num_timesteps = 0
+            for line in file1.readlines():
+                l = line.split(",")
+                # skip empty lines
+                if len(l) < 3: continue
+                tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
+                num_timesteps += 1
+            file1.close()
+            if num_timesteps == 0: 
+                num_timesteps = 1
+            self.fitness = tot_fit / num_timesteps
