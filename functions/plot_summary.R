@@ -19,6 +19,8 @@ plot_summary <- function(dirpath, png=TRUE) {
   # read in the data from the file. first line is header.
   filepath = paste("./", dirpath, "/summary.csv", sep="")
   df=read.csv(filepath, header=TRUE)
+  # determine how many agents are in each gen, to use in title.
+  agents_per_gen = max(df[df$generation_number == 1,]$agent_id)
   # change gen num to categorical
   df$generation_number <- as.factor(df$generation_number)
   # remove rows that resulted in error
@@ -32,7 +34,7 @@ plot_summary <- function(dirpath, png=TRUE) {
   # add all the plot formatting.
   p <- p +
     scale_colour_manual(values=c("red","blue","green","black")) +
-    ggtitle("Cost Distribution For Each Generation") + 
+    ggtitle(paste("Cost Distributions (with", agents_per_gen, " Agents/Generation)", "")) + 
     cowplot::theme_minimal_grid(12) +
     theme(axis.text.x = element_text(size = 8, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
     theme(plot.title = element_text(size=12)) + 
