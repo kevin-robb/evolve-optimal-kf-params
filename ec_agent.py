@@ -109,11 +109,16 @@ class Agent:
             tot_fit = 0
             num_timesteps = 0
             for line in file1.readlines():
-                l = line.split(",")
-                # skip empty lines
-                if len(l) < 3: continue
-                tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
-                num_timesteps += 1
+                try:
+                    l = line.split(",")
+                    # skip empty lines
+                    if len(l) < 3: continue
+                    tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
+                    num_timesteps += 1
+                except:
+                    # print to the console so we can check it out,
+                    # but don't stop the run.
+                    print("ERR in Agent " + self.id + ": ", l)
             file1.close()
             if num_timesteps == 0: 
                 num_timesteps = 1

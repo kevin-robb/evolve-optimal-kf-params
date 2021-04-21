@@ -63,7 +63,7 @@ def set_kf_data_loc(directory:str, fname:str):
     return row
 
 def run_bash_cmd(command:str):
-    print("Running cmd: " + command)
+    #print("Running cmd: " + command)
     # run something on the command line.
     process = subprocess.Popen(command.split())
     #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, shell=True)

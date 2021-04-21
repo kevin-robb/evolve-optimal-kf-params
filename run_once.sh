@@ -24,10 +24,10 @@ fi
 # You may also need to ensure the launch file is made executable.
 # Lastly, when the sim opens, you need to set the "repo root".
 # For me, this is "/home/kevinrobb/capstone-kf-ml".
-./../Simulators/SCR_SWC_20_SIM_6.0_LINUX/SCRSWC20.x86_64 &
+./../Simulators/SCR_SWC_20_SIM_6.0_LINUX/SCRSWC20.x86_64 & 
 
 # Start my ROS code
-roslaunch capstone kf.launch &
+roslaunch capstone kf.launch > /dev/null 2>&1 &
 # Wait for the simulator to finish, then kill ROS.
 wait %1
 #kill -9 $ROS_PID

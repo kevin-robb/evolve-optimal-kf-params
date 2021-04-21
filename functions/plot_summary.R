@@ -37,7 +37,7 @@ plot_summary <- function(dirpath, png=TRUE) {
     theme(axis.text.x = element_text(size = 8, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
     theme(plot.title = element_text(size=12)) + 
     theme(legend.position="none") + 
-    ylab("Mean Difference from Truth") + xlab("Generation")
+    ylab("Mean Difference from Truth (m)") + xlab("Generation")
 
   # write the plot to a file.
   if (png == TRUE) {
