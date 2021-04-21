@@ -80,7 +80,7 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   df_ydot = melt(df[,c(1,5,9,13,17)], id=c("t"))
   
   # define the first plot (x-position)
-  p_x <- ggplot(df_x) + geom_point(aes(x=t,y=value,colour=variable),size=0.2,stroke=1,shape=16) +
+  p_x <- ggplot(df_x) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("X Position (m)") + 
     cowplot::theme_minimal_grid(12) +
@@ -91,18 +91,18 @@ plot_one_run <- function(filename, dirpath, plot_hdg=FALSE) {
   p_x <- p_x + theme(legend.position="none") + ylab("") + xlab("timestep")
   
   # define all the other plots (w/o legend)
-  p_y <- ggplot(df_y) + geom_point(aes(x=t,y=value,colour=variable),size=0.2,stroke=1,shape=16) +
+  p_y <- ggplot(df_y) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green","black")) +
     ggtitle("Y Position (m)") + ylab("") + xlab("timestep") +
     cowplot::theme_minimal_grid(12) + theme(legend.position="none") +
     theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
     theme(plot.title = element_text(size=12))
-  p_xdot <- ggplot(df_xdot) + geom_point(aes(x=t,y=value,colour=variable),size=0.2,stroke=1,shape=16) +
+  p_xdot <- ggplot(df_xdot) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green","black")) + ylab("") + xlab("timestep") +
     ggtitle("X Velocity (m/s)") + theme_minimal_grid(12) + theme(legend.position="none") +
     theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
     theme(plot.title = element_text(size=12))
-  p_ydot <- ggplot(df_ydot) + geom_point(aes(x=t,y=value,colour=variable),size=0.2,stroke=1,shape=16) +
+  p_ydot <- ggplot(df_ydot) + geom_line(aes(x=t,y=value,colour=variable)) +
     scale_colour_manual(values=c("red","blue","green","black")) + ylab("") + xlab("timestep") +
     ggtitle("Y Velocity (m/s)") + theme_minimal_grid(12) + theme(legend.position="none") +
     theme(axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +

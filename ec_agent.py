@@ -118,7 +118,7 @@ class Agent:
                 except:
                     # print to the console so we can check it out,
                     # but don't stop the run.
-                    print("ERR in Agent " + self.id + ": ", l)
+                    print("ERR in Agent " + str(self.id) + ": ", l)
             file1.close()
             if num_timesteps == 0: 
                 num_timesteps = 1
