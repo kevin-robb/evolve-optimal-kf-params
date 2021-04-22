@@ -1,10 +1,10 @@
 Team KevinRobbotics
-Date: 2021-04-21 03:20:26 -05
-Seed: 119005742
+Date: 2021-04-22 01:26:02 -05
+Seed: 2112287899
 
-Time: 50.240
+Time: 60.000
 Multiplier: x9.000
-Score: 452.160
+Score: 540.000
 
 -- Multipliers --
 Obstacles Bonus: x15.00
