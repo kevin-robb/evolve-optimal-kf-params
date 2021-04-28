@@ -34,7 +34,7 @@ plot_summary <- function(dirpath, png=TRUE) {
   # add all the plot formatting.
   p <- p +
     scale_colour_manual(values=c("red","blue","green","black")) +
-    ggtitle(paste("Cost Distributions (with", agents_per_gen, " Agents/Generation)", "")) + 
+    ggtitle(paste("Cost Distributions (with", agents_per_gen, "Agents/Generation)", "")) + 
     cowplot::theme_minimal_grid(12) +
     theme(axis.text.x = element_text(size = 8, vjust = 0.5),axis.text.y = element_text(size = 8, vjust = 0.5)) +
     theme(plot.title = element_text(size=12)) + 

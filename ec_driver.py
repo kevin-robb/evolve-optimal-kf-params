@@ -110,7 +110,7 @@ def main():
             run_bash_cmd("bash run_once.sh nondefault")
             # assign the agent a fitness based on the results.
             agent.results = read_results.read_file()
-            agent.calc_fitness(fpath)
+            agent.calc_fitness(fpath, directory)
             # write this agent & its performance to the files.
             agent.write_to_file(summary_filepath)
             read_results.write_file(agent.results)

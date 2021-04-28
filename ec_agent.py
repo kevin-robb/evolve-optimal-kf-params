@@ -95,7 +95,7 @@ class Agent:
         file1.close
     
     # read the KF data to calculate a fitness for this agent.
-    def calc_fitness(self, fpath:str):
+    def calc_fitness(self, fpath:str, directory:str):
         # check if this agent ended in error
         if self.results["Score"] == -1:
             # set fitness to something big to ensure it is punished
@@ -112,13 +112,19 @@ class Agent:
                 try:
                     l = line.split(",")
                     # skip empty lines
-                    if len(l) < 3: continue
+                    if len(l) < 12: 
+                        file2 = open(directory + "/err_log.txt", "a+")
+                        file2.write("ERR in Agent " + str(self.id) + " len: ", l) #+"\n"
+                        file2.close()
+                        continue
                     tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
                     num_timesteps += 1
                 except:
-                    # print to the console so we can check it out,
+                    # print to the log file so we can check it out,
                     # but don't stop the run.
-                    print("ERR in Agent " + str(self.id) + ": ", l)
+                    file2 = open(fpath, "a+")
+                    file2.write("ERR in Agent " + str(self.id) + ": ", l) #+"\n"
+                    file2.close()
             file1.close()
             if num_timesteps == 0: 
                 num_timesteps = 1
