@@ -7,8 +7,6 @@ from random import choices
 from datetime import datetime
 import subprocess
 import sys
-#from os import system
-#from os import path, mkdir
 
 def initialize_agents(roster_size:int, next_id:List[int], rand:bool) -> List:
     roster = []
@@ -85,6 +83,11 @@ def main():
         # see if they skipped this, and use default values if so.
         if gen_size is None or num_gens is None:
             gen_size, num_gens = 3, 3
+        # verify the chosen option.
+        if rand:
+            print("Using random initial genes.")
+        else:
+            print("Using decent starting genome.")
 
     # source the ROS workspace.
     #run_bash_cmd("source sim_ws/devel/setup.bash")

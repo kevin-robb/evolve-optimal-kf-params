@@ -1,6 +1,6 @@
 # this file defines our evolutionary computation agents
-from typing import List, Tuple
-from random import random, uniform, randint, choice
+from typing import List
+from random import random, randint
 from os import stat
 from numpy.random import normal
 
@@ -32,8 +32,8 @@ class Agent:
 
     # create a fully random genome for the first generation.
     def full_random_genome(self):
-        # use a gaussian w/ mean 0.5 and std dev 0.1 to change each gene.
-        self.genome = [normal(loc=0.5, scale=0.1) for g in self.genome]
+        # use a gaussian w/ mean 0.5 and std dev 0.1 to create each gene.
+        self.genome = [normal(loc=0.5, scale=0.1) for _ in self.genome]
         self.normalize_genome()
         
     # mutate the genome of this agent.
