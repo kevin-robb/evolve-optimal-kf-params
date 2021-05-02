@@ -79,7 +79,15 @@ def main():
         # ask to input them (probably I just forgot).
         gen_size = int(input("Enter number of agents per gen: "))
         num_gens = int(input("Enter number of generations to run: "))
-        rand = bool(input("Full random instead of basing on default genome? (true/false): "))
+        rand = None
+        while rand is None:
+            temp = input("Full random instead of basing on default genome? (true/false): ")
+            if temp.lower() == "true":
+                rand = True
+            elif temp.lower() == "false":
+                rand = False
+            else:
+                print("Please enter 'true' or 'false'.")
         # see if they skipped this, and use default values if so.
         if gen_size is None or num_gens is None:
             gen_size, num_gens = 3, 3
