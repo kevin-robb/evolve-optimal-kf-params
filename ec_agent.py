@@ -114,7 +114,7 @@ class Agent:
                     # skip empty lines
                     if len(l) < 12: 
                         file2 = open(directory + "/err_log.txt", "a+")
-                        file2.write("ERR in Agent " + str(self.id) + " len: ", l) #+"\n"
+                        file2.write("ERR in Agent " + str(self.id) + " len: " + str(l)) #+"\n"
                         file2.close()
                         continue
                     tot_fit += abs(float(l[8])-float(l[12])) + abs(float(l[9])-float(l[13]))
@@ -123,7 +123,7 @@ class Agent:
                     # print to the log file so we can check it out,
                     # but don't stop the run.
                     file2 = open(fpath, "a+")
-                    file2.write("ERR in Agent " + str(self.id) + ": ", l) #+"\n"
+                    file2.write("ERR in Agent " + str(self.id) + ": " + str(l)) #+"\n"
                     file2.close()
             file1.close()
             if num_timesteps == 0: 
