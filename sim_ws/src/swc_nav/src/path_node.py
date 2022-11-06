@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
-from math import atan, pi, degrees
+from math import atan, pi
 from std_msgs.msg import Float32
 from swc_msgs.msg import Gps
 

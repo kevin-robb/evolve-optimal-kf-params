@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy, sys
 from std_msgs.msg import Float32, Float32MultiArray, Bool
 from swc_msgs.msg import Gps
 from sensor_msgs.msg import Imu
-from math import sin, cos, degrees
+from math import sin, cos
 import time
 import numpy as np
 from getpass import getuser
